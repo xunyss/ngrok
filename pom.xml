@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project
+	xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+	<modelVersion>4.0.0</modelVersion>
+	
+	<parent>
+		<groupId>io.xunyss</groupId>
+		<artifactId>pom</artifactId>
+		<version>1.0.0</version>
+	</parent>
+	<groupId>io.xunyss.ngrok</groupId>
+	<artifactId>ngrok</artifactId>
+	<version>1.0.0-RELEASE</version>
+	<packaging>jar</packaging>
+	
+	<name>ngrok</name>
+	<description>ngrok</description>
+	
+	<properties>
+	</properties>
+	
+	<repositories>
+		<repository>
+			<id>github-mvn-repo</id>
+			<url>https://raw.github.com/xunyss/pom/mvn-repo/</url>
+			<snapshots>
+				<enabled>true</enabled>
+				<updatePolicy>always</updatePolicy>
+			</snapshots>
+		</repository>
+	</repositories>
+	
+	<dependencies>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.12</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+	
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>1.7</source>
+					<target>1.7</target>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+	
+</project>
