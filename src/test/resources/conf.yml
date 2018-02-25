@@ -1,0 +1,9 @@
+console_ui: false
+log: stdout
+log_level: debug
+log_format: logfmt
+tunnels:
+  httpbin:
+    proto: http
+    hostname:
+    addr: 9797
