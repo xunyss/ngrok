@@ -7,8 +7,8 @@
 	<modelVersion>4.0.0</modelVersion>
 	
 	<parent>
-		<groupId>io.xunyss</groupId>
-		<artifactId>pom</artifactId>
+		<groupId>io.xunyss.pom</groupId>
+		<artifactId>pom-github</artifactId>
 		<version>1.0.0</version>
 	</parent>
 	<groupId>io.xunyss.ngrok</groupId>
