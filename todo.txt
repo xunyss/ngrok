@@ -1,0 +1,54 @@
+
+ngrok > io.xunyss.ngrok 만들기
+  > process executor 로 process kill 할 수 있는거 만들기 / process outstream 처리해 가면서 로직 넣을 수 있도록 확장포인트 만들기
+  > ngrok 실행하고 idea.key 수정하고 실행하는 ideax2 만들기
+
+ideax
+  > port 열러있으면
+    > 끝내지 말고 idea 실행하기
+
+
+
+
+  @Test
+  public void executeConsoleDaemon() throws ExecuteException {
+    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    ProcessExecutor processExecutor = new ProcessExecutor();
+  //  processExecutor.setStreamHandler(stringOutputHandler);
+    processExecutor.setStreamHandler(new PumpStreamHandler());
+    processExecutor.execute("cmd /c D:\\downloads\\ngrok.exe start -config D:\\downloads\\conf.yml httpbin");
+    
+    System.out.println(bos.size());
+  }
+
+
+
+https://www.reddit.com/r/Piracy/comments/7rme1b/jetbrains_201733_license_server/
+
+https://www.npmjs.com/package/ilsap
+
+https://ngrok.com/
+https://blog.outsider.ne.kr/1159
+
+http://jetbrains.license.laucyun.com/
+http://xidea.online/
+https://github.com/zhangjiemin000/ilsap
+  > 왜필요한거지?
+  > lcs black list 는 도대체 어디있는거지..
+
+  
+
+[webhook 도구]
+https://www.pluralsight.com/guides/node-js/exposing-your-local-node-js-app-to-the-world
+https://www.wa4e.com/md/lt_win.md
+https://www.pluralsight.com/
+https://github.com/localtunnel/localtunnel
+http://www.ultrahook.com/
+
+node
+https://nodejs.org/en/
+https://www.slant.co/topics/46/~best-ides-for-node-js
+https://code.visualstudio.com/docs/nodejs/nodejs-tutorial
+
+node.js 로 localtunnel 실행하기
+node.js 로 localtunnel 빌드하기
