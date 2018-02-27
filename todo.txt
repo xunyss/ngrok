@@ -8,21 +8,6 @@ ideax
     > 끝내지 말고 idea 실행하기
 
 
-
-
-  @Test
-  public void executeConsoleDaemon() throws ExecuteException {
-    ByteArrayOutputStream bos = new ByteArrayOutputStream();
-    ProcessExecutor processExecutor = new ProcessExecutor();
-  //  processExecutor.setStreamHandler(stringOutputHandler);
-    processExecutor.setStreamHandler(new PumpStreamHandler());
-    processExecutor.execute("cmd /c D:\\downloads\\ngrok.exe start -config D:\\downloads\\conf.yml httpbin");
-    
-    System.out.println(bos.size());
-  }
-
-
-
 https://www.reddit.com/r/Piracy/comments/7rme1b/jetbrains_201733_license_server/
 
 https://www.npmjs.com/package/ilsap
