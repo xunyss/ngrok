@@ -1,4 +1,4 @@
-package ngrok;
+package io.xunyss.ngrok;
 
 /**
  *
