@@ -1,6 +1,6 @@
 package io.xunyss.ngrok;
 
-import java.io.FileWriter;
+import java.net.InetAddress;
 
 /**
  * 
@@ -10,6 +10,12 @@ public class Ngrok {
 	
 	//----------------------------------------------------------------------------------------------
 	// https://ngrok.com/
+	// other web-hook
+	// https://www.pluralsight.com/guides/node-js/exposing-your-local-node-js-app-to-the-world
+	// https://www.wa4e.com/md/lt_win.md
+	// https://www.pluralsight.com/
+	// https://github.com/localtunnel/localtunnel
+	// http://www.ultrahook.com/
 	//----------------------------------------------------------------------------------------------
 	
 	public static void main(String[] args) throws Exception {
@@ -26,15 +32,36 @@ public class Ngrok {
 //				.build();
 		
 	
-		String hosts = "C:\\Windows\\System32\\drivers\\etc\\hosts";
-		
-//		String out = FileUtils.toString(new File(hosts));
-//		System.out.println(out);
+//		String hosts = "D:\\downloads\\hosts.txt";
+//		BufferedReader reader = new BufferedReader(new FileReader(hosts));
+//		String line;
+//		boolean bb = false;
+//		while ((line = reader.readLine()) != null) {
+//			if (bb) {
+//				System.err.println(line);
 //
-		FileWriter fw = new FileWriter(hosts, true);
-		fw.append("hahahahaha");
-		fw.close();
-	
-	
+//				StringTokenizer stz = new StringTokenizer(line);
+//				String ip = stz.nextToken();
+//				String hn = stz.nextToken();
+//				System.out.println(ip);
+//				System.out.println(hn);
+//			}
+//			if (line.equals("# ideax-autogen")) {
+//				bb = true;
+//			}
+//		}
+//		reader.close();
+//
+//		FileWriter fw = new FileWriter(hosts, true);
+//		fw.append("hahahahaha");
+//		fw.close();
+		
+		InetAddress addr = InetAddress.getByName("jetbrains.license.laucyun.com");
+		String s = addr.getHostAddress();
+		System.out.println(addr);
+		System.out.println(s);
+		
+		
+		
 	}
 }
