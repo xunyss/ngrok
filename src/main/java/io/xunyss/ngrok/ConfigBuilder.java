@@ -5,7 +5,7 @@ import java.util.List;
 
 /**
  *
- * XUNYSS
+ * @author XUNYSS
  */
 public class ConfigBuilder {
 	

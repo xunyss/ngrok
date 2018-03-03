@@ -7,7 +7,7 @@ import io.xunyss.commons.io.FileUtils;
 
 /**
  *
- * XUNYSS
+ * @author XUNYSS
  */
 public class Config {
 	

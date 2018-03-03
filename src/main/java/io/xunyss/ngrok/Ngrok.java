@@ -1,7 +1,6 @@
 package io.xunyss.ngrok;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Map;
@@ -32,6 +31,9 @@ public class Ngrok {
 	// http://www.ultrahook.com/
 	//----------------------------------------------------------------------------------------------
 	
+	/**
+	 * Ngrok Configuration.
+	 */
 	private final Config config;
 	
 	private LogHandler logHandler;
@@ -41,17 +43,29 @@ public class Ngrok {
 	
 	String addr;
 	String hostname;
-	boolean setup = false;
+	private boolean established = false;
+	private Object establishLock = new Object();
 	
-	
+	/**
+	 *
+	 * @param config
+	 */
 	public Ngrok(Config config) {
 		this.config = config;
 	}
 	
+	/**
+	 *
+	 * @param logHandler
+	 */
 	public void setLogHandler(LogHandler logHandler) {
 		this.logHandler = logHandler;
 	}
 	
+	/**
+	 *
+	 * @param tunnelNames
+	 */
 	public void start(String... tunnelNames) {
 		// ngrok commands
 		String[] commands = {
@@ -66,30 +80,48 @@ public class Ngrok {
 		
 		// execute ngrok process
 		try {
-//			processExecutor.execute(ArrayUtils.add(commands, tunnelNames), new NgrokResultHandler());
-			processExecutor.execute(new String[] { BinaryManager.getInstance().getExecutable() }, new NgrokResultHandler());
+			processExecutor.execute(
+					tunnelNames != null ?
+					ArrayUtils.add(commands, tunnelNames) :
+					ArrayUtils.toArray(BinaryManager.getInstance().getExecutable()),
+					new NgrokResultHandler()
+			);
 		}
 		catch (ExecuteException ex) {
-			ex.printStackTrace();
+			throw new NgrokException(ex);
+		}
+		catch (NgrokException ex) {
+			throw ex;
 		}
 		
-		// register process watchdog
+		// register process watchdog - when process
 		BinaryManager.getInstance().registerProcessWatchdog(watchdog);
 		
-//		synchronized (this) {
-//			while (!setup && watchdog.isProcessRunning()) {
-//				try {
-//					wait();
-//				}
-//				catch (InterruptedException ex) {
-//					ex.printStackTrace();
-//				}
-//			}
-//		}
+		// waiting for establish
+		synchronized (establishLock) {
+			while (!established) {
+				try {
+					establishLock.wait();
+				}
+				catch (InterruptedException ex) {
+					throw new NgrokException(ex);
+				}
+			}
+		}
 		
 		System.err.println("run 메소드의 마지막 줄");
 	}
 	
+	/**
+	 *
+	 */
+	public void usage() {
+		start(null);
+	}
+	
+	/**
+	 *
+	 */
 	public void stop() {
 		watchdog.destroyProcess();
 	}
@@ -99,6 +131,7 @@ public class Ngrok {
 	
 	/**
 	 *
+	 * @author XUNYSS
 	 */
 	class NgrokProcessStreamHandler extends StreamHandler {
 		
@@ -111,22 +144,19 @@ public class Ngrok {
 			try {
 				while ((line = reader.readLine()) != null) {
 					System.out.println("readline>> " + line);
-					
 //					if (logHandler != null) {
 //						logHandler.handle(line);
 //					}
-					
 //					if (setup) {
 //						System.err.println(line);
 //					}
 //					else {
 //						System.out.println(line);
 //					}
-					
 					Gson gson = new Gson();
 					Map log = gson.fromJson(line, Map.class);
 					
-					synchronized (Ngrok.this) {
+					synchronized (establishLock) {
 						System.out.println("readline>>sync>> "+line);
 						
 						if ("starting web service".equals(log.get("msg"))) {
@@ -144,8 +174,8 @@ public class Ngrok {
 								
 								hostname = opts.substring(hs + 1, he);
 								if (StringUtils.isNotEmpty(hostname)) {
-									setup = true;
-									Ngrok.this.notifyAll();
+									established = true;
+									establishLock.notify();
 								}
 							}
 						}
@@ -153,7 +183,7 @@ public class Ngrok {
 				}
 			}
 			catch (Exception ex) {
-				ex.printStackTrace();
+				throw new RuntimeException(ex);
 			}
 			finally {
 				IOUtils.closeQuietly(reader);
@@ -168,6 +198,7 @@ public class Ngrok {
 	
 	/**
 	 *
+	 * @author XUNYSS
 	 */
 	class NgrokWatchdog extends Watchdog {
 		
@@ -190,6 +221,7 @@ public class Ngrok {
 	
 	/**
 	 *
+	 * @author XUNYSS
 	 */
 	class NgrokResultHandler implements ResultHandler {
 		
@@ -197,16 +229,24 @@ public class Ngrok {
 		public void onProcessComplete(int exitValue) {
 			System.err.println("onProcessComplete : " + exitValue);
 			
-			synchronized (Ngrok.this) {
-				BinaryManager.getInstance().unregisterProcessWatchdog(watchdog);
-				Ngrok.this.notifyAll();
-			}
+			shutdownProcess();
 		}
 		
 		@Override
 		public void onProcessFailed(ExecuteException ex) {
 			System.err.println("onProcessFailed : " + ex);
 			System.err.println(watchdog.isProcessRunning());
+			
+			shutdownProcess();
+		}
+		
+		private void shutdownProcess() {
+			synchronized (establishLock) {
+				BinaryManager.getInstance().unregisterProcessWatchdog(watchdog);
+				watchdog.destroyProcess();
+				
+				establishLock.notify();
+			}
 		}
 	}
 }

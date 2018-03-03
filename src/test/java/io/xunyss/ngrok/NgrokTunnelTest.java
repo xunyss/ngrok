@@ -1,22 +1,20 @@
 package io.xunyss.ngrok;
 
-import java.util.Date;
-import java.util.Map;
-
-import com.google.gson.Gson;
-import org.junit.Test;
-
-public class NgrokTest {
+/**
+ *
+ * @author XUNYSS
+ */
+public class NgrokTunnelTest {
 	
-	public static void main(String[] args) throws Exception {
-	
+	public static void main(String[] args) {
+		
 		Ngrok ngrok = new Ngrok(ConfigBuilder.create()
 				.setAuthtoken(null)
 				.setLogLevel("debug")
 			//	.setLogFormat("logfmt")
 				.setLogFormat("json")
 				.setLog("stdout")
-				.addTunnel(ConfigBuilder.createTunnel("xtunnel")
+				.addTunnel(ConfigBuilder.createTunnel("xtn")
 						.setProto("http")
 						.setAddr("9797")
 				)
@@ -28,11 +26,10 @@ public class NgrokTest {
 //				System.out.println(line);
 //			}
 //		});
-		ngrok.start("xtunnel");
+		ngrok.start("xtn");
 		
 		System.out.println(ngrok.addr);
 		System.out.println(ngrok.hostname);
-		
 		
 //		System.err.println(new Date());
 //		Thread.sleep(5000);

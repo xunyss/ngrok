@@ -4,17 +4,17 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import io.xunyss.commons.io.FileUtils;
 import io.xunyss.commons.io.ResourceUtils;
+import io.xunyss.commons.lang.StringUtils;
 import io.xunyss.commons.lang.SystemUtils;
 import io.xunyss.commons.lang.ZipUtils;
 
 /**
- *
- * XUNYSS
+ * 
+ * @author XUNYSS
  */
 public class BinaryManager {
 	
@@ -50,7 +50,7 @@ public class BinaryManager {
 	private String tempDirectoryPath;	// temporary directory path (ends with FILE_SEPARATOR)
 	private String executable;			// executable binary name
 	
-	private List<Ngrok.NgrokWatchdog> ws;
+	private List<Ngrok.NgrokWatchdog> processMonitors;
 	
 	
 	/**
@@ -59,14 +59,18 @@ public class BinaryManager {
 	private BinaryManager() {
 		tempDirectory = new File(FileUtils.getTempDirectory(), TEMP_DIRECTORY_NAME);
 		tempDirectoryPath = tempDirectory.getPath() + FileUtils.FILE_SEPARATOR;
-		ws = Collections.synchronizedList(new ArrayList<Ngrok.NgrokWatchdog>());
+		// 2018.03.04 XUNYSS
+		// iterator 사용으로 인해
+		// synchronizedList 대신 ArrayList 를 synchronized 구문을 사용해서 사용
+//		processMonitors = Collections.synchronizedList(new ArrayList<Ngrok.NgrokWatchdog>());
+		processMonitors = new ArrayList<>();
 		install();
 	}
 	
 	/**
 	 *
 	 */
-	public void install() {
+	private void install() {
 		String executableName = null;
 		String suitableBinaryResource = null;
 		
@@ -84,16 +88,35 @@ public class BinaryManager {
 			suitableBinaryResource = "";
 		}
 		
+		// set full-path executable
+		// unpack executable to temporary directory
+		unpackExecutable(executableName, suitableBinaryResource);
+	}
+	
+	/**
+	 *
+	 * @param executableName
+	 * @param suitableBinaryResource
+	 */
+	private void unpackExecutable(String executableName, String suitableBinaryResource) {
+		//------------------------------------------------------------------------------------------
+		// throw exception if no suitable binary
+		if (StringUtils.isEmpty(suitableBinaryResource)) {
+			throw new NgrokException("No suitable binary resource");
+		}
+		
+		//------------------------------------------------------------------------------------------
 		// full-path of ngrok executable
 		executable = tempDirectoryPath + executableName;
 		
+		//------------------------------------------------------------------------------------------
+		// unpack executable to temporary directory
 		try {
-			// unpack executable to temporary directory
 			String resourcePath = BINARY_RESOURCE_ROOT + suitableBinaryResource;
 			ZipUtils.unzip(ResourceUtils.getResourceAsStream(resourcePath), tempDirectory);
 		}
 		catch (IOException ex) {
-			throw new RuntimeException(ex);
+			throw new NgrokException("Cannot unpack executable resource", ex);
 		}
 		finally {
 			// remove temporary binaries when system exit
@@ -108,30 +131,45 @@ public class BinaryManager {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
 			public void run() {
-				for (Ngrok.NgrokWatchdog w : ws) {
-					while (w.isProcessRunning()) {
-						try { Thread.sleep(100); } catch (InterruptedException ex) {}
-						w.destroyProcess();
+				// 1. 종료 처리되지 않은 (현재 실행중인) ngrok process 종료
+				synchronized (processMonitors) {
+					for (Ngrok.NgrokWatchdog processMonitor : processMonitors) {
+						while (processMonitor.isProcessRunning()) {
+							processMonitor.destroyProcess();
+						}
 					}
 				}
+				// 2. 임시 디렉토리 삭제
 				FileUtils.deleteDirectoryQuietly(tempDirectory);
 			}
 		});
 	}
 	
-	void registerProcessWatchdog(Ngrok.NgrokWatchdog watchDog) {
-		ws.add(watchDog);
+	/**
+	 *
+	 * @param watchdog
+	 */
+	void registerProcessWatchdog(Ngrok.NgrokWatchdog watchdog) {
+		synchronized (processMonitors) {
+			processMonitors.add(watchdog);
+		}
 	}
 	
-	public void unregisterProcessWatchdog(Ngrok.NgrokWatchdog watchdog) {
-		ws.remove(watchdog);
+	/**
+	 *
+	 * @param watchdog
+	 */
+	void unregisterProcessWatchdog(Ngrok.NgrokWatchdog watchdog) {
+		synchronized (processMonitors) {
+			processMonitors.remove(watchdog);
+		}
 	}
 	
 	/**
 	 *
 	 * @return
 	 */
-	public String getExecutable() {
+	String getExecutable() {
 		return executable;
 	}
 	

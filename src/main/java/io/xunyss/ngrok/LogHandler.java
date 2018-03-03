@@ -1,7 +1,7 @@
 package io.xunyss.ngrok;
 
 /**
- *
+ * 
  * @author XUNYSS
  */
 public abstract class LogHandler {
