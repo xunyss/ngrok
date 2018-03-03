@@ -119,8 +119,12 @@ public class BinaryManager {
 		});
 	}
 	
-	void registerProcessWatchDog(Ngrok.NgrokWatchdog watchDog) {
+	void registerProcessWatchdog(Ngrok.NgrokWatchdog watchDog) {
 		ws.add(watchDog);
+	}
+	
+	public void unregisterProcessWatchdog(Ngrok.NgrokWatchdog watchdog) {
+		ws.remove(watchdog);
 	}
 	
 	/**
