@@ -4,13 +4,17 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Map;
+
+import com.google.gson.Gson;
 
 import io.xunyss.commons.exec.ExecuteException;
 import io.xunyss.commons.exec.ProcessExecutor;
 import io.xunyss.commons.exec.ResultHandler;
 import io.xunyss.commons.exec.StreamHandler;
-import io.xunyss.commons.exec.WatchDog;
+import io.xunyss.commons.exec.Watchdog;
 import io.xunyss.commons.lang.ArrayUtils;
+import io.xunyss.commons.lang.StringUtils;
 
 /**
  * 
@@ -29,64 +33,115 @@ public class Ngrok {
 	
 	private final Config config;
 	
-	NgrokWatchDog watchDog = new NgrokWatchDog();
+	private LogHandler logHandler;
+	private NgrokWatchdog watchdog = new NgrokWatchdog();
+	
+	
+	String addr;
+	String hostname;
+	boolean setup = false;
 	
 	
 	public Ngrok(Config config) {
 		this.config = config;
 	}
 	
-	public void run(String... tunnelNames) {
+	public void setLogHandler(LogHandler logHandler) {
+		this.logHandler = logHandler;
+	}
+	
+	public void start(String... tunnelNames) {
+		// ngrok commands
 		String[] commands = {
 				BinaryManager.getInstance().getExecutable(), "start",
 				"-config", config.getPath()
 		};
 		
-		
+		// process executor
 		ProcessExecutor processExecutor = new ProcessExecutor();
 		processExecutor.setStreamHandler(new NgrokProcessStreamHandler());
-		processExecutor.setWatchDog(watchDog);
+		processExecutor.setWatchdog(watchdog);
 		
+		// execute ngrok process
 		try {
-			processExecutor.execute(ArrayUtils.add(commands, tunnelNames), new ResultHandler() {
-				@Override
-				public void onProcessComplete(int exitValue) {
-					System.err.println("onProcessCompleetet : " + exitValue);
-				}
-				@Override
-				public void onProcessFailed(ExecuteException ex) {
-					//
-				}
-			});
+			processExecutor.execute(ArrayUtils.add(commands, tunnelNames), new NgrokResultHandler());
 		}
 		catch (ExecuteException ex) {
 			ex.printStackTrace();
 		}
+		
+		// register process watchdog
+		BinaryManager.getInstance().registerProcessWatchDog(watchdog);
+		
+		synchronized (this) {
+			while (!setup) {
+				try {
+					wait();
+				}
+				catch (InterruptedException ex) {
+					ex.printStackTrace();
+				}
+			}
+		}
+		
+		System.err.println("run 메소드의 마지막 줄");
 	}
 	
-	public void kill() {
-		watchDog.destroyNgrok();
+	public void stop() {
+		watchdog.destroyProcess();
 	}
 	
 	
-	private class NgrokProcessStreamHandler extends StreamHandler {
+	//==============================================================================================
+	
+	/**
+	 *
+	 */
+	class NgrokProcessStreamHandler extends StreamHandler {
 		
 		@Override
 		public void start() {
 			InputStream inputStream = getProcessInputStream();
 			BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
 			
-			int c = 0;
 			String line;
 			try {
 				while ((line = reader.readLine()) != null) {
-					c++;
-					System.out.println(line);
+//					if (logHandler != null) {
+//						logHandler.handle(line);
+//					}
 					
-					if (c > 40) {
-						// exit
-						System.err.println("이제 그만 프로세스를 종료할까 합니다");
-						watchDog.destroyNgrok();
+//					if (setup) {
+//						System.err.println(line);
+//					}
+//					else {
+//						System.out.println(line);
+//					}
+					
+					Gson gson = new Gson();
+					Map log = gson.fromJson(line, Map.class);
+					
+					synchronized (Ngrok.this) {
+						if ("starting web service".equals(log.get("msg"))) {
+							addr = log.get("addr").toString();
+						}
+						else if ("start tunnel listen".equals(log.get("msg"))) {
+							if ("http".equals(log.get("proto"))) {
+								String opts = log.get("opts").toString();
+								int ps = opts.indexOf('{');
+								int pe = opts.lastIndexOf('}');
+								
+								opts = opts.substring(ps + 1, pe);
+								int hs = opts.indexOf(':');
+								int he = opts.indexOf(' ', hs);
+								
+								hostname = opts.substring(hs + 1, he);
+								if (StringUtils.isNotEmpty(hostname)) {
+									setup = true;
+									Ngrok.this.notifyAll();
+								}
+							}
+						}
 					}
 				}
 			}
@@ -101,7 +156,10 @@ public class Ngrok {
 		}
 	}
 	
-	private class NgrokWatchDog extends WatchDog {
+	/**
+	 *
+	 */
+	class NgrokWatchdog extends Watchdog {
 		
 		@Override
 		protected void start() {
@@ -111,8 +169,28 @@ public class Ngrok {
 		protected void stop() {
 		}
 		
-		public void destroyNgrok() {
-			destroyProcess();
+		public boolean isProcessRunning() {
+			return super.isProcessRunning();
+		}
+		
+		public void destroyProcess() {
+			super.destroyProcess();
+		}
+	}
+	
+	/**
+	 *
+	 */
+	class NgrokResultHandler implements ResultHandler {
+		
+		@Override
+		public void onProcessComplete(int exitValue) {
+			System.err.println("onProcessCompleetet : " + exitValue);
+		}
+		
+		@Override
+		public void onProcessFailed(ExecuteException ex) {
+		
 		}
 	}
 }

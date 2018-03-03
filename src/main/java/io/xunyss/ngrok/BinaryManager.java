@@ -3,6 +3,9 @@ package io.xunyss.ngrok;
 import java.io.File;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import io.xunyss.commons.io.FileUtils;
 import io.xunyss.commons.io.ResourceUtils;
@@ -47,6 +50,8 @@ public class BinaryManager {
 	private String tempDirectoryPath;	// temporary directory path (ends with FILE_SEPARATOR)
 	private String executable;			// executable binary name
 	
+	private List<Ngrok.NgrokWatchdog> ws;
+	
 	
 	/**
 	 *
@@ -54,6 +59,7 @@ public class BinaryManager {
 	private BinaryManager() {
 		tempDirectory = new File(FileUtils.getTempDirectory(), TEMP_DIRECTORY_NAME);
 		tempDirectoryPath = tempDirectory.getPath() + FileUtils.FILE_SEPARATOR;
+		ws = Collections.synchronizedList(new ArrayList<Ngrok.NgrokWatchdog>());
 		install();
 	}
 	
@@ -102,9 +108,19 @@ public class BinaryManager {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
 			public void run() {
+				for (Ngrok.NgrokWatchdog w : ws) {
+					while (w.isProcessRunning()) {
+						try { Thread.sleep(100); } catch (InterruptedException ex) {}
+						w.destroyProcess();
+					}
+				}
 				FileUtils.deleteDirectoryQuietly(tempDirectory);
 			}
 		});
+	}
+	
+	void registerProcessWatchDog(Ngrok.NgrokWatchdog watchDog) {
+		ws.add(watchDog);
 	}
 	
 	/**
