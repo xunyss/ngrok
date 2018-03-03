@@ -3,11 +3,13 @@ package io.xunyss.ngrok;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import io.xunyss.commons.exec.ExecuteException;
+
 public class NgrokTest {
 	
 	@Ignore
 	@Test
-	public void test() {
+	public void test() throws Exception{
 	
 		Config config = ConfigBuilder.create()
 				.setAuthtoken(null)
@@ -21,6 +23,8 @@ public class NgrokTest {
 				.build();
 		
 		Ngrok ngrok = new Ngrok(config);
-		ngrok.run("httpbin");
+//		ngrok.run("httpbin");
+		
+		Thread.sleep(5000);
 	}
 }

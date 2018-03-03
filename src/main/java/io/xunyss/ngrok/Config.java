@@ -2,9 +2,6 @@ package io.xunyss.ngrok;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 import io.xunyss.commons.io.FileUtils;
 
@@ -14,26 +11,37 @@ import io.xunyss.commons.io.FileUtils;
  */
 public class Config {
 	
-	private static List<String> generatedConfigFiles = Collections.synchronizedList(new ArrayList<String>());
+	/**
+	 *
+	 */
+	private String path;
 	
 	
-	private String configFilePath;
-	
-	Config(String configString) {
-		configFilePath = "D:/downloads/ngrokconf/ngrok_" + hashCode() + ".conf";
+	/**
+	 *
+	 * @param configuration
+	 */
+	Config(String configuration) {
+		BinaryManager binaryManager = BinaryManager.getInstance();
+		
+		// full-path of temporary config file
+		path = binaryManager.getTempDirectoryPath() + String.format("ngrok_%s.conf", hashCode());
+		
+		// write configuration file
 		try {
-			FileUtils.writeString(new File(configFilePath), configString);
+			FileUtils.writeString(new File(path), configuration);
 		}
 		catch (IOException ex) {
-			ex.printStackTrace();
+			throw new RuntimeException(ex);
 		}
-		
-		// add static list
-		generatedConfigFiles.add(configFilePath);
 	}
 	
+	/**
+	 *
+	 * @return
+	 */
 	public String getPath() {
-		return configFilePath;
+		return path;
 	}
 	
 	/**
@@ -41,9 +49,6 @@ public class Config {
 	 */
 	@Override
 	protected void finalize() /* throws Throwable */ {
-		if (configFilePath != null) {
-			generatedConfigFiles.remove(configFilePath);
-			new File(configFilePath).delete();
-		}
+		new File(path).delete();
 	}
 }

@@ -29,6 +29,8 @@ public class ConfigBuilder {
 	
 	//----------------------------------------------------------------------------------------------
 	
+	private static final String LINE_SEPARATOR = "\r\n";
+	
 	private final boolean consoleUi = false;
 	
 	private String authtoken;
@@ -77,41 +79,41 @@ public class ConfigBuilder {
 	}
 	
 	public Config build() {
-		StringBuilder configString = new StringBuilder();
+		StringBuilder conf = new StringBuilder();
 		
-		configString.append("console_ui: ").append(consoleUi).append("\r\n");
+		conf.append("console_ui: ").append(consoleUi).append(LINE_SEPARATOR);
 		if (authtoken != null) {
-			configString.append("authtoken: ").append(authtoken).append("\r\n");
+			conf.append("authtoken: ").append(authtoken).append(LINE_SEPARATOR);
 		}
 		if (logLevel != null) {
-			configString.append("log_level: ").append(logLevel).append("\r\n");
+			conf.append("log_level: ").append(logLevel).append(LINE_SEPARATOR);
 		}
 		if (logFormat != null) {
-			configString.append("log_format: ").append(logFormat).append("\r\n");
+			conf.append("log_format: ").append(logFormat).append(LINE_SEPARATOR);
 		}
 		if (log != null) {
-			configString.append("log: ").append(log).append("\r\n");
+			conf.append("log: ").append(log).append(LINE_SEPARATOR);
 		}
 		if (tunnels != null && tunnels.size() > 0) {
-			configString.append("tunnels:").append("\r\n");
+			conf.append("tunnels:").append(LINE_SEPARATOR);
 			for (Tunnel tunnel : tunnels) {
-				configString.append("  ").append(tunnel.name).append(":").append("\r\n");
+				conf.append("  ").append(tunnel.name).append(":").append(LINE_SEPARATOR);
 				if (tunnel.proto != null) {
-					configString.append("    proto: ").append(tunnel.proto).append("\r\n");
+					conf.append("    proto: ").append(tunnel.proto).append(LINE_SEPARATOR);
 				}
 				if (tunnel.addr != null) {
-					configString.append("    addr: ").append(tunnel.addr).append("\r\n");
+					conf.append("    addr: ").append(tunnel.addr).append(LINE_SEPARATOR);
 				}
 				if (tunnel.hostname != null) {
-					configString.append("    hostname: ").append(tunnel.hostname).append("\r\n");
+					conf.append("    hostname: ").append(tunnel.hostname).append(LINE_SEPARATOR);
 				}
 				if (tunnel.subdomain != null) {
-					configString.append("    subdomain: ").append(tunnel.subdomain).append("\r\n");
+					conf.append("    subdomain: ").append(tunnel.subdomain).append(LINE_SEPARATOR);
 				}
 			}
 		}
 		
-		return new Config(configString.toString());
+		return new Config(conf.toString());
 	}
 	
 	
@@ -120,7 +122,7 @@ public class ConfigBuilder {
 	/**
 	 *
 	 */
-	static class Tunnel {
+	public static class Tunnel {
 		
 		private String name;
 		

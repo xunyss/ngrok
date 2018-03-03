@@ -22,17 +22,14 @@ public class Ngrok {
 	
 	private Config config;
 	
+	
 	public Ngrok(Config config) {
 		this.config = config;
 	}
 	
 	public void run(String... tunnelNames) {
-		if (tunnelNames.length == 0) {
-			throw new IllegalArgumentException("aaaaaaaaaaa");
-		}
-		
 		String[] commands = {
-				BinaryManager.getInstance().getBinaryName(), "start",
+				BinaryManager.getInstance().getExecutable(), "start",
 				"-config", config.getPath()
 		};
 
