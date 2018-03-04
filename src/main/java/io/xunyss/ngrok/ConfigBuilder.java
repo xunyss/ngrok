@@ -33,21 +33,17 @@ public class ConfigBuilder {
 	
 	private final boolean consoleUi = false;
 	
-	private String authtoken;
 	private String logLevel;
 	private String logFormat;
 	private String log;
+	
+	private String authtoken;
 	private String webAddr;
 	private List<Tunnel> tunnels;
 	
 	
 	private ConfigBuilder() {
 		super();
-	}
-	
-	public final ConfigBuilder setAuthtoken(String authtoken) {
-		this.authtoken = authtoken;
-		return this;
 	}
 	
 	public final ConfigBuilder setLogLevel(String logLevel) {
@@ -62,6 +58,11 @@ public class ConfigBuilder {
 	
 	public final ConfigBuilder setLog(String log) {
 		this.log = log;
+		return this;
+	}
+	
+	public final ConfigBuilder setAuthtoken(String authtoken) {
+		this.authtoken = authtoken;
 		return this;
 	}
 	
@@ -82,9 +83,6 @@ public class ConfigBuilder {
 		StringBuilder conf = new StringBuilder();
 		
 		conf.append("console_ui: ").append(consoleUi).append(LINE_SEPARATOR);
-		if (authtoken != null) {
-			conf.append("authtoken: ").append(authtoken).append(LINE_SEPARATOR);
-		}
 		if (logLevel != null) {
 			conf.append("log_level: ").append(logLevel).append(LINE_SEPARATOR);
 		}
@@ -93,6 +91,9 @@ public class ConfigBuilder {
 		}
 		if (log != null) {
 			conf.append("log: ").append(log).append(LINE_SEPARATOR);
+		}
+		if (authtoken != null) {
+			conf.append("authtoken: ").append(authtoken).append(LINE_SEPARATOR);
 		}
 		if (tunnels != null && tunnels.size() > 0) {
 			conf.append("tunnels:").append(LINE_SEPARATOR);
@@ -113,7 +114,7 @@ public class ConfigBuilder {
 			}
 		}
 		
-		return new Config(conf.toString());
+		return new Config(logLevel, logFormat, log, conf.toString());
 	}
 	
 	

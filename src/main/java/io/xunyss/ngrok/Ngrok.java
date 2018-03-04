@@ -15,6 +15,8 @@ import io.xunyss.commons.exec.Watchdog;
 import io.xunyss.commons.io.IOUtils;
 import io.xunyss.commons.lang.ArrayUtils;
 import io.xunyss.commons.lang.StringUtils;
+import io.xunyss.ngrok.parselog.LogParser;
+import io.xunyss.ngrok.parselog.LogParserFactory;
 
 /**
  * 
@@ -83,7 +85,31 @@ public class Ngrok {
 					tunnelNames != null ?
 					ArrayUtils.add(commandsUsingConfing, tunnelNames) :
 					ArrayUtils.toArray(BinaryManager.getInstance().getExecutable()),
-					new NgrokResultHandler()
+					
+					new ResultHandler() {
+						@Override
+						public void onProcessComplete(int exitValue) {
+							System.err.println("onProcessComplete : " + exitValue);
+							shutdownProcess();
+						}
+						
+						@Override
+						public void onProcessFailed(ExecuteException ex) {
+							System.err.println("onProcessFailed : " + ex);
+							System.err.println(processMonitor.isProcessRunning());
+							shutdownProcess();
+						}
+						
+						private void shutdownProcess() {
+							synchronized (establishLock) {
+								//
+								BinaryManager.getInstance().unregisterProcessMonitor(processMonitor);
+								processMonitor.destroyProcess();
+								
+								establishLock.notify();
+							}
+						}
+					}
 			);
 		}
 		catch (ExecuteException ex) {
@@ -133,6 +159,12 @@ public class Ngrok {
 	 * @author XUNYSS
 	 */
 	class NgrokProcessStreamHandler extends StreamHandler {
+		
+		private final LogParser logParser;
+		
+		private NgrokProcessStreamHandler() {
+			logParser = LogParserFactory.createParser(config);
+		}
 		
 		@Override
 		public void start() {
@@ -209,38 +241,6 @@ public class Ngrok {
 		@Override
 		public void destroyProcess() {
 			super.destroyProcess();
-		}
-	}
-	
-	/**
-	 *
-	 * @author XUNYSS
-	 */
-	class NgrokResultHandler implements ResultHandler {
-		
-		@Override
-		public void onProcessComplete(int exitValue) {
-			System.err.println("onProcessComplete : " + exitValue);
-			
-			shutdownProcess();
-		}
-		
-		@Override
-		public void onProcessFailed(ExecuteException ex) {
-			System.err.println("onProcessFailed : " + ex);
-			System.err.println(processMonitor.isProcessRunning());
-			
-			shutdownProcess();
-		}
-		
-		private void shutdownProcess() {
-			synchronized (establishLock) {
-				//
-				BinaryManager.getInstance().unregisterProcessMonitor(processMonitor);
-				processMonitor.destroyProcess();
-				
-				establishLock.notify();
-			}
 		}
 	}
 }
