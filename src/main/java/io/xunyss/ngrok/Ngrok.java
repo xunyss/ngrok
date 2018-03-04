@@ -3,9 +3,6 @@ package io.xunyss.ngrok;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.Map;
-
-import com.google.gson.Gson;
 
 import io.xunyss.commons.exec.ExecuteException;
 import io.xunyss.commons.exec.ProcessExecutor;
@@ -14,7 +11,6 @@ import io.xunyss.commons.exec.StreamHandler;
 import io.xunyss.commons.exec.Watchdog;
 import io.xunyss.commons.io.IOUtils;
 import io.xunyss.commons.lang.ArrayUtils;
-import io.xunyss.commons.lang.StringUtils;
 import io.xunyss.ngrok.parselog.LogParser;
 import io.xunyss.ngrok.parselog.LogParserFactory;
 
@@ -41,11 +37,10 @@ public class Ngrok {
 	private LogHandler logHandler;
 	private NgrokWatchdog processMonitor;
 	
-	
-	String addr;
-	String hostname;
-	private boolean established = false;
-	private Object establishLock = new Object();
+	private SetupDetails setupDetails;
+	private boolean setupComplete = false;
+	private boolean setupError = false;
+	private Object setupLock = new Object();
 	
 	/**
 	 *
@@ -101,12 +96,12 @@ public class Ngrok {
 						}
 						
 						private void shutdownProcess() {
-							synchronized (establishLock) {
+							synchronized (setupLock) {
 								//
 								BinaryManager.getInstance().unregisterProcessMonitor(processMonitor);
 								processMonitor.destroyProcess();
 								
-								establishLock.notify();
+								setupLock.notify();
 							}
 						}
 					}
@@ -123,10 +118,10 @@ public class Ngrok {
 		BinaryManager.getInstance().registerProcessMonitor(processMonitor);
 		
 		// waiting for establish
-		synchronized (establishLock) {
-			while (!established) {
+		synchronized (setupLock) {
+			while (!setupComplete) {
 				try {
-					establishLock.wait();
+					setupLock.wait();
 				}
 				catch (InterruptedException ex) {
 					throw new NgrokException(ex);
@@ -162,60 +157,79 @@ public class Ngrok {
 		
 		private final LogParser logParser;
 		
+		
 		private NgrokProcessStreamHandler() {
 			logParser = LogParserFactory.createParser(config);
 		}
 		
 		@Override
 		public void start() {
-			InputStream inputStream = getProcessInputStream();
+			InputStream inputStream = getLogInputStream();
 			BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
 			
 			String line;
 			try {
 				while ((line = reader.readLine()) != null) {
-					if (logHandler != null) {
-						logHandler.handle(line);
+					
+					if (setupError) {
+						setupDetails.appendErrorLine(line);
+						continue;
 					}
 					
-					Gson gson = new Gson();
-					Map log = gson.fromJson(line, Map.class);
-					
-					synchronized (establishLock) {
-						if ("starting web service".equals(log.get("msg"))) {
-							addr = log.get("addr").toString();
+					if (!setupComplete) {
+						try {
+							// parse line for setup details
+							logParser.parseLine(line, setupDetails);
 						}
-						else if ("start tunnel listen".equals(log.get("msg"))) {
-							if ("http".equals(log.get("proto"))) {
-								String opts = log.get("opts").toString();
-								int ps = opts.indexOf('{');
-								int pe = opts.lastIndexOf('}');
-								
-								opts = opts.substring(ps + 1, pe);
-								int hs = opts.indexOf(':');
-								int he = opts.indexOf(' ', hs);
-								
-								hostname = opts.substring(hs + 1, he);
-								if (StringUtils.isNotEmpty(hostname)) {
-									established = true;
-									establishLock.notify();
-								}
+						catch (Exception ex) {
+							// fail ed to parse
+							setupDetails.setError(setupError = true);
+							setupDetails.appendErrorLine(line);
+							continue;
+						}
+						if (setupDetails.isComplete()) {	// 모든 필요한 setup details 정보가 전부 파싱된 상태
+							synchronized (setupLock) {		// waiting 중이던 setup 메소드를 깨움
+								setupComplete = true;
+								setupLock.notify();
 							}
 						}
+					}
+					
+					// invoke log handler
+					if (logHandler != null) {
+						logHandler.handle(line);
 					}
 				}
 			}
 			catch (Exception ex) {
+				setupComplete = true;/////////////////// start 바로 위에 wait 깨워야지, while 조건문이 setupComplete 이니.........
 				throw new RuntimeException(ex);
 			}
 			finally {
 				IOUtils.closeQuietly(reader);
 			}
+			
+			synchronized (setupLock) {
+				setupComplete = true;
+				setupLock.notify();
+			}
+			//if (occurError) System.err.println(errmsg);
 		}
 		
 		@Override
 		public void stop() {
 			System.err.println("Ngrok 스트림 핸들러 중지됨");
+		}
+		
+		private InputStream getLogInputStream() {
+			String log = config.getLog();
+			if ("stdout".equals(log)) {
+				return getProcessInputStream();
+			}
+			else if ("stderr".equals(log)) {
+				return getProcessErrorStream();
+			}
+			return null;
 		}
 	}
 	

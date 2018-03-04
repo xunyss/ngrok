@@ -29,13 +29,13 @@ public class ConfigBuilder {
 	
 	//----------------------------------------------------------------------------------------------
 	
-	private static final String LINE_SEPARATOR = "\r\n";
+	private static final String EOL = System.lineSeparator();
 	
 	private final boolean consoleUi = false;
 	
-	private String logLevel;
-	private String logFormat;
-	private String log;
+	private String logLevel = "debug";
+	private String logFormat = "json";
+	private String log = "stdout";
 	
 	private String authtoken;
 	private String webAddr;
@@ -82,34 +82,34 @@ public class ConfigBuilder {
 	public Config build() {
 		StringBuilder conf = new StringBuilder();
 		
-		conf.append("console_ui: ").append(consoleUi).append(LINE_SEPARATOR);
+		conf.append("console_ui: ").append(consoleUi).append(EOL);
 		if (logLevel != null) {
-			conf.append("log_level: ").append(logLevel).append(LINE_SEPARATOR);
+			conf.append("log_level: ").append(logLevel).append(EOL);
 		}
 		if (logFormat != null) {
-			conf.append("log_format: ").append(logFormat).append(LINE_SEPARATOR);
+			conf.append("log_format: ").append(logFormat).append(EOL);
 		}
 		if (log != null) {
-			conf.append("log: ").append(log).append(LINE_SEPARATOR);
+			conf.append("log: ").append(log).append(EOL);
 		}
 		if (authtoken != null) {
-			conf.append("authtoken: ").append(authtoken).append(LINE_SEPARATOR);
+			conf.append("authtoken: ").append(authtoken).append(EOL);
 		}
 		if (tunnels != null && tunnels.size() > 0) {
-			conf.append("tunnels:").append(LINE_SEPARATOR);
+			conf.append("tunnels:").append(EOL);
 			for (Tunnel tunnel : tunnels) {
-				conf.append("  ").append(tunnel.name).append(":").append(LINE_SEPARATOR);
+				conf.append("  ").append(tunnel.name).append(":").append(EOL);
 				if (tunnel.proto != null) {
-					conf.append("    proto: ").append(tunnel.proto).append(LINE_SEPARATOR);
+					conf.append("    proto: ").append(tunnel.proto).append(EOL);
 				}
 				if (tunnel.addr != null) {
-					conf.append("    addr: ").append(tunnel.addr).append(LINE_SEPARATOR);
+					conf.append("    addr: ").append(tunnel.addr).append(EOL);
 				}
 				if (tunnel.hostname != null) {
-					conf.append("    hostname: ").append(tunnel.hostname).append(LINE_SEPARATOR);
+					conf.append("    hostname: ").append(tunnel.hostname).append(EOL);
 				}
 				if (tunnel.subdomain != null) {
-					conf.append("    subdomain: ").append(tunnel.subdomain).append(LINE_SEPARATOR);
+					conf.append("    subdomain: ").append(tunnel.subdomain).append(EOL);
 				}
 			}
 		}

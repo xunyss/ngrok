@@ -28,8 +28,8 @@ public class NgrokTunnelTest {
 		});
 		ngrok.start("xtn");
 		
-		System.out.println(ngrok.addr);
-		System.out.println(ngrok.hostname);
+//		System.out.println(ngrok.addr);
+//		System.out.println(ngrok.hostname);
 		
 //		System.err.println(new Date());
 //		Thread.sleep(5000);

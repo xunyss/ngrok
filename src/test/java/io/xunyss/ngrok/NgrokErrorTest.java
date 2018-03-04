@@ -11,5 +11,7 @@ public class NgrokErrorTest {
 		// 1. stream handler start 에서 runtime exception 발생시키기
 		
 		// 2. bad ngrok option 넣기
+		
+		System.out.println( "\r\n".equals(System.getProperty("line.separator")) );
 	}
 }
