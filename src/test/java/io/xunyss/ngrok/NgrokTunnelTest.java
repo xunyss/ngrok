@@ -20,12 +20,12 @@ public class NgrokTunnelTest {
 				)
 				.build()
 		);
-//		ngrok.setLogHandler(new LogHandler() {
-//			@Override
-//			protected void handle(String line) {
-//				System.out.println(line);
-//			}
-//		});
+		ngrok.setLogHandler(new LogHandler() {
+			@Override
+			protected void handle(String line) {
+				System.out.println(line);
+			}
+		});
 		ngrok.start("xtn");
 		
 		System.out.println(ngrok.addr);

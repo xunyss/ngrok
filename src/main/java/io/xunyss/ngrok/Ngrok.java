@@ -37,8 +37,7 @@ public class Ngrok {
 	private final Config config;
 	
 	private LogHandler logHandler;
-	
-	private NgrokWatchdog watchdog;
+	private NgrokWatchdog processMonitor;
 	
 	
 	String addr;
@@ -68,7 +67,7 @@ public class Ngrok {
 	 */
 	public void start(String... tunnelNames) {
 		// ngrok commands
-		String[] commands = {
+		String[] commandsUsingConfing = {
 				BinaryManager.getInstance().getExecutable(), "start",
 				"-config", config.getPath()
 		};
@@ -76,13 +75,13 @@ public class Ngrok {
 		// process executor
 		ProcessExecutor processExecutor = new ProcessExecutor();
 		processExecutor.setStreamHandler(new NgrokProcessStreamHandler());
-		processExecutor.setWatchdog(watchdog = new NgrokWatchdog());
+		processExecutor.setWatchdog(processMonitor = new NgrokWatchdog());
 		
 		// execute ngrok process
 		try {
 			processExecutor.execute(
 					tunnelNames != null ?
-					ArrayUtils.add(commands, tunnelNames) :
+					ArrayUtils.add(commandsUsingConfing, tunnelNames) :
 					ArrayUtils.toArray(BinaryManager.getInstance().getExecutable()),
 					new NgrokResultHandler()
 			);
@@ -95,7 +94,7 @@ public class Ngrok {
 		}
 		
 		// register process watchdog - when process
-		BinaryManager.getInstance().registerProcessWatchdog(watchdog);
+		BinaryManager.getInstance().registerProcessMonitor(processMonitor);
 		
 		// waiting for establish
 		synchronized (establishLock) {
@@ -123,7 +122,7 @@ public class Ngrok {
 	 *
 	 */
 	public void stop() {
-		watchdog.destroyProcess();
+		processMonitor.destroyProcess();
 	}
 	
 	
@@ -143,16 +142,10 @@ public class Ngrok {
 			String line;
 			try {
 				while ((line = reader.readLine()) != null) {
-					System.out.println("readline>> " + line);
-//					if (logHandler != null) {
-//						logHandler.handle(line);
-//					}
-//					if (setup) {
-//						System.err.println(line);
-//					}
-//					else {
-//						System.out.println(line);
-//					}
+					if (logHandler != null) {
+						logHandler.handle(line);
+					}
+					
 					Gson gson = new Gson();
 					Map log = gson.fromJson(line, Map.class);
 					
@@ -210,10 +203,12 @@ public class Ngrok {
 		protected void stop() {
 		}
 		
+		@Override
 		public boolean isProcessRunning() {
 			return super.isProcessRunning();
 		}
 		
+		@Override
 		public void destroyProcess() {
 			super.destroyProcess();
 		}
@@ -235,15 +230,16 @@ public class Ngrok {
 		@Override
 		public void onProcessFailed(ExecuteException ex) {
 			System.err.println("onProcessFailed : " + ex);
-			System.err.println(watchdog.isProcessRunning());
+			System.err.println(processMonitor.isProcessRunning());
 			
 			shutdownProcess();
 		}
 		
 		private void shutdownProcess() {
 			synchronized (establishLock) {
-				BinaryManager.getInstance().unregisterProcessWatchdog(watchdog);
-				watchdog.destroyProcess();
+				//
+				BinaryManager.getInstance().unregisterProcessMonitor(processMonitor);
+				processMonitor.destroyProcess();
 				
 				establishLock.notify();
 			}

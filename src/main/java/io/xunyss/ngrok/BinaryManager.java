@@ -46,6 +46,7 @@ public class BinaryManager {
 		TEMP_DIRECTORY_NAME = "io_xunyss_ngrok_bin_" + jvmName.replace('@', '-');
 	}
 	
+	
 	private File tempDirectory;			// temporary directory
 	private String tempDirectoryPath;	// temporary directory path (ends with FILE_SEPARATOR)
 	private String executable;			// executable binary name
@@ -134,7 +135,7 @@ public class BinaryManager {
 				// 1. 종료 처리되지 않은 (현재 실행중인) ngrok process 종료
 				synchronized (processMonitors) {
 					for (Ngrok.NgrokWatchdog processMonitor : processMonitors) {
-						while (processMonitor.isProcessRunning()) {
+						if (processMonitor.isProcessRunning()) {
 							processMonitor.destroyProcess();
 						}
 					}
@@ -143,26 +144,6 @@ public class BinaryManager {
 				FileUtils.deleteDirectoryQuietly(tempDirectory);
 			}
 		});
-	}
-	
-	/**
-	 *
-	 * @param watchdog
-	 */
-	void registerProcessWatchdog(Ngrok.NgrokWatchdog watchdog) {
-		synchronized (processMonitors) {
-			processMonitors.add(watchdog);
-		}
-	}
-	
-	/**
-	 *
-	 * @param watchdog
-	 */
-	void unregisterProcessWatchdog(Ngrok.NgrokWatchdog watchdog) {
-		synchronized (processMonitors) {
-			processMonitors.remove(watchdog);
-		}
 	}
 	
 	/**
@@ -179,5 +160,25 @@ public class BinaryManager {
 	 */
 	String getTempDirectoryPath() {
 		return tempDirectoryPath;
+	}
+	
+	/**
+	 *
+	 * @param watchdog
+	 */
+	void registerProcessMonitor(Ngrok.NgrokWatchdog watchdog) {
+		synchronized (processMonitors) {
+			processMonitors.add(watchdog);
+		}
+	}
+	
+	/**
+	 *
+	 * @param watchdog
+	 */
+	void unregisterProcessMonitor(Ngrok.NgrokWatchdog watchdog) {
+		synchronized (processMonitors) {
+			processMonitors.remove(watchdog);
+		}
 	}
 }
