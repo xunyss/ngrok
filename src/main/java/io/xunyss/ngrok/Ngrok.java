@@ -150,8 +150,6 @@ public class Ngrok {
 					Map log = gson.fromJson(line, Map.class);
 					
 					synchronized (establishLock) {
-						System.out.println("readline>>sync>> "+line);
-						
 						if ("starting web service".equals(log.get("msg"))) {
 							addr = log.get("addr").toString();
 						}
