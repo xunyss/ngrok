@@ -302,6 +302,7 @@ public class Ngrok {
 			// 아직 internalStart, start 함수가 한번도 실행 안된상태에서 함수 호출시 (셧다운훅에서(가능성은낮지만))
 			// 즉 execute 수행 시점, start() 수행 시점 사이에 isProcessRunning 호출됐을때
 			// 대비하기 위해 그럴땐 start 먹을때 까지 isProcessRunning 호출한 스레드를 waiting
+			// ## commons.exec 의 Watchdog 도 같이 수정해야 함
 			return super.isProcessRunning();
 		}
 		
