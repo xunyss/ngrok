@@ -135,9 +135,11 @@ public class BinaryManager {
 				// 1. 종료 처리되지 않은 (현재 실행중인) ngrok process 종료
 				synchronized (processMonitors) {
 					for (Ngrok.NgrokWatchdog processMonitor : processMonitors) {
-						if (processMonitor.isProcessRunning()) {
+						//아래줄 있던없던 destroyprocess 했음에도 임시디렉토리 안지워지는 경우 계속 발생
+						//원인을 찾자
+						//if (processMonitor.isProcessRunning()) {
 							processMonitor.destroyProcess();
-						}
+						//}
 					}
 				}
 				// 2. 임시 디렉토리 삭제

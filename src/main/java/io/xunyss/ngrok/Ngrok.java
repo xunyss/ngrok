@@ -1,11 +1,14 @@
 package io.xunyss.ngrok;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 
 import io.xunyss.commons.exec.ExecuteException;
 import io.xunyss.commons.exec.ProcessExecutor;
+import io.xunyss.commons.exec.PumpStreamHandler;
 import io.xunyss.commons.exec.ResultHandler;
 import io.xunyss.commons.exec.StreamHandler;
 import io.xunyss.commons.exec.Watchdog;
@@ -38,8 +41,7 @@ public class Ngrok {
 	private NgrokWatchdog processMonitor;
 	
 	private SetupDetails setupDetails;
-	private boolean setupComplete = false;
-	private boolean setupError = false;
+	private boolean setupFinished = false;
 	private Object setupLock = new Object();
 	
 	/**
@@ -61,8 +63,9 @@ public class Ngrok {
 	/**
 	 *
 	 * @param tunnelNames
+	 * @throws NgrokException
 	 */
-	public void start(String... tunnelNames) {
+	public void start(String... tunnelNames) throws NgrokException {
 		// ngrok commands
 		String[] commandsUsingConfing = {
 				BinaryManager.getInstance().getExecutable(), "start",
@@ -77,19 +80,25 @@ public class Ngrok {
 		// execute ngrok process
 		try {
 			processExecutor.execute(
-					tunnelNames != null ?
-					ArrayUtils.add(commandsUsingConfing, tunnelNames) :
-					ArrayUtils.toArray(BinaryManager.getInstance().getExecutable()),
+//					tunnelNames == null ?												// for process TEST
+//					ArrayUtils.toArray(BinaryManager.getInstance().getExecutable()) :	// for process TEST
+					ArrayUtils.add(commandsUsingConfing, ArrayUtils.nullToEmpty(tunnelNames)),
 					
 					new ResultHandler() {
 						@Override
 						public void onProcessComplete(int exitValue) {
+							// case 1 - 수행도중 destroy 호출 되는 경우 (stop 메소드 호출, runtime shutdown hook 호출 등..)
+							// case 2 - 프로세스가 할 일 다하고 스스로 정상적으로 종료 됨 (exitValue == process.exitValue())
+							//          > watchdog start > stream handler start
+							//          > Ngrok.start 메소드에서 NgrokException 던진 후 catch 문 수행
+							//          > stream handler stop > watchdog stop
+							//          > ResultHandler.onProcessComplete
 							System.err.println("onProcessComplete : " + exitValue);
-							shutdownProcess();
 						}
 						
 						@Override
 						public void onProcessFailed(ExecuteException ex) {
+							// case 3 -
 							System.err.println("onProcessFailed : " + ex);
 							System.err.println(processMonitor.isProcessRunning());
 							shutdownProcess();
@@ -119,7 +128,7 @@ public class Ngrok {
 		
 		// waiting for establish
 		synchronized (setupLock) {
-			while (!setupComplete) {
+			while (!setupFinished) {
 				try {
 					setupLock.wait();
 				}
@@ -128,6 +137,12 @@ public class Ngrok {
 				}
 			}
 		}
+		// case 1, case 3 - waiting loop 종료와 함께 즉시 start 메소드 종료
+		////////// case 3 일경우에도 여기서 exception 던질 필요가 있나..............
+		// case 2 - throw NgrokException
+		if (setupDetails.isError()) {
+			throw new NgrokException(setupDetails.getErrorMessage());
+		}
 		
 		System.err.println("run 메소드의 마지막 줄");
 	}
@@ -135,15 +150,29 @@ public class Ngrok {
 	/**
 	 *
 	 */
-	public void usage() {
-		start(null);
+	public void stop() {
+		processMonitor.destroyProcess();
 	}
 	
 	/**
 	 *
 	 */
-	public void stop() {
-		processMonitor.destroyProcess();
+	public void reset() {
+	
+	}
+	
+	/**
+	 *
+	 */
+	public void printUsage(OutputStream outputStream) {
+		ProcessExecutor processExecutor = new ProcessExecutor();
+		processExecutor.setStreamHandler(new PumpStreamHandler(outputStream));
+		try {
+			processExecutor.execute(BinaryManager.getInstance().getExecutable());
+		}
+		catch (ExecuteException ex) {
+			throw new NgrokException(ex);
+		}
 	}
 	
 	
@@ -163,57 +192,47 @@ public class Ngrok {
 		}
 		
 		@Override
-		public void start() {
+		public void start() {System.err.println("Ngrok 스트림 핸들러 시작됨");
 			InputStream inputStream = getLogInputStream();
 			BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
 			
+			// parse setup details
+			try {
+				setupDetails = logParser.parse(reader);
+			}
+			// case 3
+			catch (IOException ex) {
+				// close process input stream
+				IOUtils.closeQuietly(reader);
+				// fire ResultHandler.onProcessFailed()
+				throw new NgrokException(ex);
+			}
+			// case 1 / case 2
+			finally {
+				synchronized (setupLock) {
+					setupFinished = true;
+					setupLock.notify();
+				}
+			}
+			
+			// invoke log handler
+			// setup details 가 parsing 성공 이후에 수행 함
 			String line;
 			try {
 				while ((line = reader.readLine()) != null) {
-					
-					if (setupError) {
-						setupDetails.appendErrorLine(line);
-						continue;
-					}
-					
-					if (!setupComplete) {
-						try {
-							// parse line for setup details
-							logParser.parseLine(line, setupDetails);
-						}
-						catch (Exception ex) {
-							// fail ed to parse
-							setupDetails.setError(setupError = true);
-							setupDetails.appendErrorLine(line);
-							continue;
-						}
-						if (setupDetails.isComplete()) {	// 모든 필요한 setup details 정보가 전부 파싱된 상태
-							synchronized (setupLock) {		// waiting 중이던 setup 메소드를 깨움
-								setupComplete = true;
-								setupLock.notify();
-							}
-						}
-					}
-					
-					// invoke log handler
 					if (logHandler != null) {
 						logHandler.handle(line);
 					}
 				}
 			}
-			catch (Exception ex) {
-				setupComplete = true;/////////////////// start 바로 위에 wait 깨워야지, while 조건문이 setupComplete 이니.........
-				throw new RuntimeException(ex);
+			catch (IOException | RuntimeException ex) {
+				// fire ResultHandler.onProcessFailed()
+				throw new NgrokException(ex);
 			}
 			finally {
+				// close process input stream
 				IOUtils.closeQuietly(reader);
 			}
-			
-			synchronized (setupLock) {
-				setupComplete = true;
-				setupLock.notify();
-			}
-			//if (occurError) System.err.println(errmsg);
 		}
 		
 		@Override
@@ -241,10 +260,12 @@ public class Ngrok {
 		
 		@Override
 		protected void start() {
+			System.err.println(">> watchdog start");
 		}
 		
 		@Override
 		protected void stop() {
+			System.err.println(">> watchdog stop");
 		}
 		
 		@Override

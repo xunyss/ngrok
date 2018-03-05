@@ -1,5 +1,8 @@
 package io.xunyss.ngrok.parselog;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+
 import io.xunyss.ngrok.SetupDetails;
 
 /**
@@ -9,7 +12,8 @@ import io.xunyss.ngrok.SetupDetails;
 public class FmtLogParser implements LogParser {
 	
 	@Override
-	public void parseLine(String line, SetupDetails setupDetails) {
-	
+	public SetupDetails parse(BufferedReader reader) throws IOException {
+		
+		return null;
 	}
 }

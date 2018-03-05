@@ -12,6 +12,5 @@ public class NgrokErrorTest {
 		
 		// 2. bad ngrok option 넣기
 		
-		System.out.println( "\r\n".equals(System.getProperty("line.separator")) );
 	}
 }

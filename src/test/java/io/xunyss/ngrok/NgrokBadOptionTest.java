@@ -1,17 +1,12 @@
 package io.xunyss.ngrok;
 
-/**
- *
- * @author XUNYSS
- */
-public class NgrokTunnelTest {
+public class NgrokBadOptionTest {
 	
 	public static void main(String[] args) {
 		
 		Ngrok ngrok = new Ngrok(ConfigBuilder.create()
 				.setAuthtoken(null)
 				.setLogLevel("debug")
-			//	.setLogFormat("logfmt")
 				.setLogFormat("json")
 				.setLog("stdout")
 				.addTunnel(ConfigBuilder.createTunnel("xtn")
@@ -20,12 +15,13 @@ public class NgrokTunnelTest {
 				)
 				.build()
 		);
-		ngrok.setLogHandler(new LogHandler() {
-			@Override
-			protected void handle(String line) {
-				System.out.println(line);
-			}
-		});
-		ngrok.start("xtn");
+		
+		try {
+			ngrok.start("invalid_tunnel_name");
+		}
+		catch (NgrokException ex) {
+			System.err.println(">>>> NgrokException occurred >>>>");
+			System.err.println(ex.getMessage());
+		}
 	}
 }

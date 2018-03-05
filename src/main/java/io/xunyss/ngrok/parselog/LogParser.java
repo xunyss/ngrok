@@ -1,5 +1,8 @@
 package io.xunyss.ngrok.parselog;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+
 import io.xunyss.ngrok.SetupDetails;
 
 /**
@@ -8,5 +11,5 @@ import io.xunyss.ngrok.SetupDetails;
  */
 public interface LogParser {
 	
-	void parseLine(final String line, final SetupDetails setupDetails);
+	SetupDetails parse(BufferedReader reader) throws IOException;
 }

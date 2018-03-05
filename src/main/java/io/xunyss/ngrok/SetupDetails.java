@@ -44,4 +44,8 @@ public class SetupDetails {
 		}
 		errorMessage.append(line).append(EOL);
 	}
+	
+	public String getErrorMessage() {
+		return errorMessage.toString();
+	}
 }
