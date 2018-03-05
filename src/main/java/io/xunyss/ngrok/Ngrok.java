@@ -66,9 +66,12 @@ public class Ngrok {
 	 * @throws NgrokException
 	 */
 	public void start(String... tunnelNames) throws NgrokException {
-		// ngrok commands
+		// BinaryManager singleton instance
+		final BinaryManager binaryManager = BinaryManager.getInstance();
+		
+		// ngrok execution commands
 		String[] commandsUsingConfing = {
-				BinaryManager.getInstance().getExecutable(), "start",
+				binaryManager.getExecutable(), "start",
 				"-config", config.getPath()
 		};
 		
@@ -77,28 +80,49 @@ public class Ngrok {
 		processExecutor.setStreamHandler(new NgrokProcessStreamHandler());
 		processExecutor.setWatchdog(processMonitor = new NgrokWatchdog());
 		
+		// register process watchdog - when process
+		binaryManager.registerProcessMonitor(processMonitor);
+		
 		// execute ngrok process
 		try {
 			processExecutor.execute(
-//					tunnelNames == null ?												// for process TEST
-//					ArrayUtils.toArray(BinaryManager.getInstance().getExecutable()) :	// for process TEST
+//					tunnelNames == null ?									// for process TEST
+//					ArrayUtils.toArray(binaryManager.getExecutable()) :		// for process TEST
 					ArrayUtils.add(commandsUsingConfing, ArrayUtils.nullToEmpty(tunnelNames)),
 					
 					new ResultHandler() {
 						@Override
 						public void onProcessComplete(int exitValue) {
-							// case 1 - 수행도중 destroy 호출 되는 경우 (stop 메소드 호출, runtime shutdown hook 호출 등..)
+							// case 1 - 정상 수행도중 Ngrok.stop() > Process.destroy 호출 되는 경우
+							//          > Watchdog.start() > StreamHandler.start()
+							//          > Ngrok.start() 메소드 정상적으로 종료 / LogHandler.handle() 수행 지속
+							//          > Ngrok.stop() > Process.destroy()
+							//          > StreamHandler.stop() > Watchdog.stop()
+							//          > ResultHandler.onProcessComplete()
+							// case 1 - Ctrl + C 입력으로 Runtime Shutdown Hook 스레드 실행
+							//          > Watchdog.start() > StreamHandler.start()
+							//          > Ngrok.start() 메소드 정상적으로 종료 / LogHandler.handle() 수행 지속
+							//          > Runtime Shutdown Hook 스레드 실행 > Process.destroy()
+							//            Runtime Shutdown Hook 스레드가 종료하면 다른 스레드들은 즉시 종료 (내 추축)
+							//            StreamHandler.stop() > Watchdog.stop() > ResultHandler.onProcessComplete()
+							//            이 세개의 실행 여부는 보장 할 수 없음
+							//            Runtime Shutdown Hook 스레드가 천천히 끝나면 실행 될 꺼임
 							// case 2 - 프로세스가 할 일 다하고 스스로 정상적으로 종료 됨 (exitValue == process.exitValue())
-							//          > watchdog start > stream handler start
-							//          > Ngrok.start 메소드에서 NgrokException 던진 후 catch 문 수행
-							//          > stream handler stop > watchdog stop
-							//          > ResultHandler.onProcessComplete
+							//          > Watchdog.start() > StreamHandler.start()
+							//          > StreamHandler.start() 정상 종료
+							//          > Ngrok.start() 메소드에서 NgrokException 던짐 (catch 문 수행)
+							//          > StreamHandler.stop() > Watchdog.stop()
+							//          > ResultHandler.onProcessComplete()
 							System.err.println("onProcessComplete : " + exitValue);
+							synchronized (binaryManager) {
+								binaryManager.unregisterProcessMonitor(processMonitor);
+								processMonitor.destroyProcess();
+							}
 						}
 						
 						@Override
 						public void onProcessFailed(ExecuteException ex) {
-							// case 3 -
+							// case 3 - TODO TEST!!!!!!!!!!!!
 							System.err.println("onProcessFailed : " + ex);
 							System.err.println(processMonitor.isProcessRunning());
 							shutdownProcess();
@@ -107,7 +131,7 @@ public class Ngrok {
 						private void shutdownProcess() {
 							synchronized (setupLock) {
 								//
-								BinaryManager.getInstance().unregisterProcessMonitor(processMonitor);
+								binaryManager.unregisterProcessMonitor(processMonitor);
 								processMonitor.destroyProcess();
 								
 								setupLock.notify();
@@ -122,9 +146,6 @@ public class Ngrok {
 		catch (NgrokException ex) {
 			throw ex;
 		}
-		
-		// register process watchdog - when process
-		BinaryManager.getInstance().registerProcessMonitor(processMonitor);
 		
 		// waiting for establish
 		synchronized (setupLock) {
@@ -149,6 +170,14 @@ public class Ngrok {
 	
 	/**
 	 *
+	 * @return
+	 */
+	public SetupDetails getSetupDetails() {
+		return setupDetails;
+	}
+	
+	/**
+	 *
 	 */
 	public void stop() {
 		processMonitor.destroyProcess();
@@ -158,7 +187,7 @@ public class Ngrok {
 	 *
 	 */
 	public void reset() {
-	
+		// TODO implements
 	}
 	
 	/**
@@ -270,11 +299,16 @@ public class Ngrok {
 		
 		@Override
 		public boolean isProcessRunning() {
+			// 아직 internalStart, start 함수가 한번도 실행 안된상태에서 함수 호출시 (셧다운훅에서(가능성은낮지만))
+			// 즉 execute 수행 시점, start() 수행 시점 사이에 isProcessRunning 호출됐을때
+			// 대비하기 위해 그럴땐 start 먹을때 까지 isProcessRunning 호출한 스레드를 waiting
 			return super.isProcessRunning();
 		}
 		
 		@Override
 		public void destroyProcess() {
+			// 이 함수도 마찬가지임
+			// execute 수행 시점, start() 수행 시점 사이에 isProcessRunning 호출됐을때
 			super.destroyProcess();
 		}
 	}

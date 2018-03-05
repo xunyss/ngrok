@@ -30,6 +30,14 @@ public class SetupDetails {
 				StringUtils.isNotEmpty(hostname);
 	}
 	
+	public String getAddr() {
+		return addr;
+	}
+	
+	public String getHostname() {
+		return hostname;
+	}
+	
 	public void setError(boolean error) {
 		this.error = error;
 	}

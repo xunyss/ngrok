@@ -47,6 +47,8 @@ public class BinaryManager {
 	}
 	
 	
+	private boolean installed = false;
+	
 	private File tempDirectory;			// temporary directory
 	private String tempDirectoryPath;	// temporary directory path (ends with FILE_SEPARATOR)
 	private String executable;			// executable binary name
@@ -65,7 +67,13 @@ public class BinaryManager {
 		// synchronizedList 대신 ArrayList 를 synchronized 구문을 사용해서 사용
 //		processMonitors = Collections.synchronizedList(new ArrayList<Ngrok.NgrokWatchdog>());
 		processMonitors = new ArrayList<>();
-		install();
+		
+		// 2018.03.05 XUNYSS
+		// install 은 getExecutable() 메소드가 최초로 실행될 때 한번 수행 함
+//		install();
+		
+		// remove temporary binaries when system exit
+		registerShutdownHook();
 	}
 	
 	/**
@@ -119,10 +127,13 @@ public class BinaryManager {
 		catch (IOException ex) {
 			throw new NgrokException("Cannot unpack executable resource", ex);
 		}
-		finally {
-			// remove temporary binaries when system exit
-			registerShutdownHook();
-		}
+		// 2018.03.05 XUNYSS
+		// 생성자에서 shutdown hook 추가
+		// getExecutable 을 수행하지 않아도 Config 객체가 생성되면 Temporary directory 가 생성됨
+//		finally {
+//			// remove temporary binaries when system exit
+//			registerShutdownHook();
+//		}
 	}
 	
 	/**
@@ -130,19 +141,30 @@ public class BinaryManager {
 	 */
 	private void registerShutdownHook() {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
+			// 얘가 processExec execute 실행 직후 실행된다면,, process 객체 생성전에 실행되면...
+			// 이 thread 가 실행되고 execute 에 의해 process 가 실행된다면....
+			// ** ctrl+C 테스트
+			// java -cp classes;test-classes;commons-base-1.0.0-RELEASE.jar;gson-2.8.2.jar io.xunyss.ngrok.NgrokTunnelTest
 			@Override
 			public void run() {
+				// boolean shutdown = true; 해서 true 이면 register/ unregister 안되게 할까
+				System.out.println("shutdown hook.............");
 				// 1. 종료 처리되지 않은 (현재 실행중인) ngrok process 종료
-				synchronized (processMonitors) {
+				synchronized (this) {
 					for (Ngrok.NgrokWatchdog processMonitor : processMonitors) {
-						//아래줄 있던없던 destroyprocess 했음에도 임시디렉토리 안지워지는 경우 계속 발생
-						//원인을 찾자
-						//if (processMonitor.isProcessRunning()) {
+						// ** temp 안지워지는문제
+						// 아래줄 있던없던 destroyprocess 했음에도 임시디렉토리 안지워지는 경우 계속 발생
+						// 원인을 찾자
+						// isRunning 은 ..... thread 순서 안맞으수있나?
+						if (processMonitor.isProcessRunning()) {
+							System.out.println(" >>>>> desssssssssssssssss");
 							processMonitor.destroyProcess();
-						//}
+						}
 					}
 				}
+				try { Thread.sleep(100); } catch (Exception e) {}
 				// 2. 임시 디렉토리 삭제
+				// Process.destroy() 이후에 즉시 수행될 경우 삭제 되지 않는 현상 발생
 				FileUtils.deleteDirectoryQuietly(tempDirectory);
 			}
 		});
@@ -152,8 +174,8 @@ public class BinaryManager {
 	 *
 	 * @return
 	 */
-	String getExecutable() {
-		return executable;
+	File getTempDirectory() {
+		return tempDirectory;
 	}
 	
 	/**
@@ -166,10 +188,22 @@ public class BinaryManager {
 	
 	/**
 	 *
+	 * @return
+	 */
+	String getExecutable() {
+		if (!installed) {
+			installed = true;
+			install();
+		}
+		return executable;
+	}
+	
+	/**
+	 *
 	 * @param watchdog
 	 */
 	void registerProcessMonitor(Ngrok.NgrokWatchdog watchdog) {
-		synchronized (processMonitors) {
+		synchronized (this) {
 			processMonitors.add(watchdog);
 		}
 	}
@@ -179,7 +213,7 @@ public class BinaryManager {
 	 * @param watchdog
 	 */
 	void unregisterProcessMonitor(Ngrok.NgrokWatchdog watchdog) {
-		synchronized (processMonitors) {
+		synchronized (this) {
 			processMonitors.remove(watchdog);
 		}
 	}

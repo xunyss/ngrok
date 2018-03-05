@@ -9,6 +9,11 @@ public class NgrokUsageTest {
 	public static void main(String[] args) {
 		
 		Ngrok ngrok = new Ngrok(ConfigBuilder.create().build());
-		ngrok.printUsage(System.out);
+		
+		// print usage output
+	//	ngrok.printUsage(System.out);
+		
+		// occur error
+		ngrok.start(null);
 	}
 }
