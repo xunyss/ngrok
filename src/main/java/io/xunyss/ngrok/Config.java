@@ -35,9 +35,6 @@ public class Config {
 		
 		BinaryManager binaryManager = BinaryManager.getInstance();
 		
-		// make temporary directory
-		binaryManager.getTempDirectory().mkdirs();
-		
 		// full-path of temporary config file
 		path = binaryManager.getTempDirectoryPath() + String.format("ngrok_%s.conf", hashCode());
 		

@@ -47,6 +47,7 @@ public class BinaryManager {
 	}
 	
 	
+	private boolean tempDirectoryCreated = false;
 	private boolean installed = false;
 	
 	private File tempDirectory;			// temporary directory
@@ -170,19 +171,23 @@ public class BinaryManager {
 		});
 	}
 	
-	/**
-	 *
-	 * @return
-	 */
-	File getTempDirectory() {
-		return tempDirectory;
-	}
+//	/**
+//	 *
+//	 * @return
+//	 */
+//	File getTempDirectory() {
+//		return tempDirectory;
+//	}
 	
 	/**
 	 *
 	 * @return
 	 */
 	String getTempDirectoryPath() {
+		if (!tempDirectoryCreated) {
+			tempDirectoryCreated = true;
+			tempDirectory.mkdir();
+		}
 		return tempDirectoryPath;
 	}
 	
