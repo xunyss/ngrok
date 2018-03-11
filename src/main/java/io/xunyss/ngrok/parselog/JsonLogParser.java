@@ -61,7 +61,7 @@ public class JsonLogParser implements LogParser {
 		return setupDetails;
 	}
 	
-	@SuppressWarnings({"unused", "unchecked"})
+	@SuppressWarnings({"unchecked"})
 	private void parseLine(final String line, final SetupDetails setupDetails) {
 		// parse to map
 		Map<String, String> logMap = gson.fromJson(line, Map.class);
