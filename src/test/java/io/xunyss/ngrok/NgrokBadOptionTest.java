@@ -1,8 +1,16 @@
 package io.xunyss.ngrok;
 
+import io.xunyss.ngrok.debug.Debug;
+
+/**
+ *
+ * @author XUNYSS
+ */
 public class NgrokBadOptionTest {
 	
 	public static void main(String[] args) {
+		
+		Debug.setDebugEnable(true);
 		
 		Ngrok ngrok = new Ngrok(ConfigBuilder.create()
 				.setAuthtoken(null)
@@ -20,8 +28,8 @@ public class NgrokBadOptionTest {
 			ngrok.start("invalid_tunnel_name");
 		}
 		catch (NgrokException ex) {
-			System.err.println(">>>> NgrokException occurred >>>>");
-			System.err.println(ex.getMessage());
+			System.out.println("TEST >> NgrokException occurred >>");
+			System.out.println(ex.getMessage());
 		}
 	}
 }

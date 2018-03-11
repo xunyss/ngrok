@@ -6,6 +6,7 @@ import java.util.Map;
 
 import com.google.gson.Gson;
 
+import io.xunyss.commons.lang.StringUtils;
 import io.xunyss.ngrok.SetupDetails;
 
 /**
@@ -50,7 +51,9 @@ public class JsonLogParser implements LogParser {
 			catch (Exception ex) {
 				// fail ed to parse
 				setupDetails.setError(true);
-				setupDetails.appendErrorLine(line);
+				if (StringUtils.isNotEmpty(line)) {
+					setupDetails.appendErrorLine(line);
+				}
 				continue;
 			}
 		}

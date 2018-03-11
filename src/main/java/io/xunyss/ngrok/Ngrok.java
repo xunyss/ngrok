@@ -1,7 +1,6 @@
 package io.xunyss.ngrok;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -14,6 +13,7 @@ import io.xunyss.commons.exec.StreamHandler;
 import io.xunyss.commons.exec.Watchdog;
 import io.xunyss.commons.io.IOUtils;
 import io.xunyss.commons.lang.ArrayUtils;
+import io.xunyss.ngrok.debug.Debug;
 import io.xunyss.ngrok.parselog.LogParser;
 import io.xunyss.ngrok.parselog.LogParserFactory;
 
@@ -113,28 +113,22 @@ public class Ngrok {
 							//          > Ngrok.start() 메소드에서 NgrokException 던짐 (catch 문 수행)
 							//          > StreamHandler.stop() > Watchdog.stop()
 							//          > ResultHandler.onProcessComplete()
-							System.err.println("onProcessComplete : " + exitValue);
 							synchronized (binaryManager) {
+								Debug.log("onProcessComplete: " + exitValue);
 								binaryManager.unregisterProcessMonitor(processMonitor);
-								processMonitor.destroyProcess();
 							}
 						}
 						
 						@Override
 						public void onProcessFailed(ExecuteException ex) {
-							// case 3 - TODO TEST!!!!!!!!!!!!
-							System.err.println("onProcessFailed : " + ex);
-							System.err.println(processMonitor.isProcessRunning());
-							shutdownProcess();
-						}
-						
-						private void shutdownProcess() {
-							synchronized (setupLock) {
-								//
+							// case 3 - 정상 수행도중 StreamHandler or LogHandler 에서 RuntimeException 발생
+							//          > Watchdog.start() > StreamHandler.start()
+							//          > StreamHandler.start() 메소드에서 RuntimeException 발생
+							//          > ResultHandler.onProcessFailed()
+							synchronized (binaryManager) {
+								Debug.log("onProcessFailed: " + ex.toString());
 								binaryManager.unregisterProcessMonitor(processMonitor);
 								processMonitor.destroyProcess();
-								
-								setupLock.notify();
 							}
 						}
 					}
@@ -158,14 +152,14 @@ public class Ngrok {
 				}
 			}
 		}
-		// case 1, case 3 - waiting loop 종료와 함께 즉시 start 메소드 종료
-		////////// case 3 일경우에도 여기서 exception 던질 필요가 있나..............
-		// case 2 - throw NgrokException
+		// case 1 - waiting loop 종료와 함께 즉시 start 메소드 종료
+		// case 2 - waiting loop 종료와 후 throw NgrokException
+		// case 3 - waiting loop 종료와 함께 즉시 start 메소드 종료
 		if (setupDetails.isError()) {
 			throw new NgrokException(setupDetails.getErrorMessage());
 		}
 		
-		System.err.println("run 메소드의 마지막 줄");
+		Debug.log("Ngrok.start() finished");
 	}
 	
 	/**
@@ -221,7 +215,9 @@ public class Ngrok {
 		}
 		
 		@Override
-		public void start() {System.err.println("Ngrok 스트림 핸들러 시작됨");
+		public void start() {
+			Debug.log("StreamHandler.start() called");
+			
 			InputStream inputStream = getLogInputStream();
 			BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
 			
@@ -230,7 +226,7 @@ public class Ngrok {
 				setupDetails = logParser.parse(reader);
 			}
 			// case 3
-			catch (IOException ex) {
+			catch (Exception ex) {
 				// close process input stream
 				IOUtils.closeQuietly(reader);
 				// fire ResultHandler.onProcessFailed()
@@ -254,7 +250,8 @@ public class Ngrok {
 					}
 				}
 			}
-			catch (IOException | RuntimeException ex) {
+			// case 3
+			catch (Exception ex) {
 				// fire ResultHandler.onProcessFailed()
 				throw new NgrokException(ex);
 			}
@@ -266,7 +263,7 @@ public class Ngrok {
 		
 		@Override
 		public void stop() {
-			System.err.println("Ngrok 스트림 핸들러 중지됨");
+			Debug.log("StreamHandler.stop() called");
 		}
 		
 		private InputStream getLogInputStream() {
@@ -289,12 +286,12 @@ public class Ngrok {
 		
 		@Override
 		protected void start() {
-			System.err.println(">> watchdog start");
+			Debug.log("Watchdog.start() called");
 		}
 		
 		@Override
 		protected void stop() {
-			System.err.println(">> watchdog stop");
+			Debug.log("Watchdog.stop() called");
 		}
 		
 		@Override

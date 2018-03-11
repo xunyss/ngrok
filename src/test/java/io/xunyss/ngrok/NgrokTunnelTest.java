@@ -36,9 +36,9 @@ public class NgrokTunnelTest {
 		System.out.print(new Date() + " : ");
 		System.out.println("established tunnel hostname:" + setupDetails.getHostname());
 		
-//		Thread.sleep(20000);
-//		ngrok.stop();
-//		System.err.print(new Date() + " : ");
-//		System.err.println("test program is stopped normally");
+		Thread.sleep(10_000);
+		ngrok.stop();
+		System.err.print(new Date() + " : ");
+		System.err.println("test program is stopped normally");
 	}
 }

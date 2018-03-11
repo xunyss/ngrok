@@ -48,9 +48,11 @@ public class SetupDetails {
 	
 	public void appendErrorLine(String line) {
 		if (errorMessage == null) {
-			errorMessage = new StringBuilder();
+			errorMessage = new StringBuilder(line);
 		}
-		errorMessage.append(line).append(EOL);
+		else {
+			errorMessage.append(EOL).append(line);
+		}
 	}
 	
 	public String getErrorMessage() {

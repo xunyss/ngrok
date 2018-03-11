@@ -11,6 +11,7 @@ import io.xunyss.commons.io.ResourceUtils;
 import io.xunyss.commons.lang.StringUtils;
 import io.xunyss.commons.lang.SystemUtils;
 import io.xunyss.commons.lang.ZipUtils;
+import io.xunyss.ngrok.debug.Debug;
 
 /**
  * 
@@ -141,7 +142,7 @@ public class BinaryManager {
 	 *
 	 */
 	private void registerShutdownHook() {
-		Runtime.getRuntime().addShutdownHook(new Thread() {
+		Runtime.getRuntime().addShutdownHook(new Thread("Ngrok ShutdownHook") {
 			// 얘가 processExec execute 실행 직후 실행된다면,, process 객체 생성전에 실행되면...
 			// 이 thread 가 실행되고 execute 에 의해 process 가 실행된다면....
 			// ** ctrl+C 테스트
@@ -149,21 +150,22 @@ public class BinaryManager {
 			@Override
 			public void run() {
 				// boolean shutdown = true; 해서 true 이면 register/ unregister 안되게 할까
-				System.out.println("shutdown hook.............");
 				// 1. 종료 처리되지 않은 (현재 실행중인) ngrok process 종료
-				synchronized (this) {
+				synchronized (BinaryManager.this) {
+					Debug.log("BinaryManager shutdown-hook start");
 					for (Ngrok.NgrokWatchdog processMonitor : processMonitors) {
+						System.out.println("pppppppppppppppppppp"+processMonitor);
 						// ** temp 안지워지는문제
 						// 아래줄 있던없던 destroyprocess 했음에도 임시디렉토리 안지워지는 경우 계속 발생
 						// 원인을 찾자
 						// isRunning 은 ..... thread 순서 안맞으수있나?
 						if (processMonitor.isProcessRunning()) {
-							System.out.println(" >>>>> desssssssssssssssss");
+							//	System.out.println(" >>>>> desssssssssssssssss");
 							processMonitor.destroyProcess();
 						}
 					}
 				}
-				try { Thread.sleep(100); } catch (Exception e) {}
+//				try { Thread.sleep(100); } catch (Exception e) {}
 				// 2. 임시 디렉토리 삭제
 				// Process.destroy() 이후에 즉시 수행될 경우 삭제 되지 않는 현상 발생
 				FileUtils.deleteDirectoryQuietly(tempDirectory);
