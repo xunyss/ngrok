@@ -8,6 +8,7 @@ import io.xunyss.ngrok.debug.Debug;
  */
 public class NgrokErrorTest {
 	
+	// temp 삭제 안되는 상황 계속 발생
 	public static void main(String[] args) {
 		
 		Debug.setDebugEnable(true);
@@ -25,14 +26,11 @@ public class NgrokErrorTest {
 				.build()
 		);
 		ngrok.setLogHandler(new LogHandler() {
-			int logCount = 0;
 			@Override
 			protected void handle(String line) {
 				System.out.println("[LOG] " + line);
-				if (logCount++ > 10) {
-					// occur exception
-					System.out.println(100 / 0);
-				}
+				// occur exception
+				System.out.println(100 / 0);
 			}
 		});
 		ngrok.start("xtn");

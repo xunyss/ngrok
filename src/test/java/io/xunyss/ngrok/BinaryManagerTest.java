@@ -11,7 +11,7 @@ import io.xunyss.commons.io.FileUtils;
 public class BinaryManagerTest {
 	
 	public void deleteProcessFile() throws Exception {
-		final String source = "D:/downloads/ngrok.exe";
+		final String source = "C:/downloads/ngrok.exe";
 		final String exe = "ngrok.exe";
 		
 		FileUtils.copy(new File(source), new File(FileUtils.getTempDirectory(), exe));
@@ -35,6 +35,7 @@ public class BinaryManagerTest {
 		process.waitFor();
 	}
 	
+	// temp 삭제 안되는 상황 자주 발생
 	public static void main(String[] args) throws Exception {
 		new BinaryManagerTest().deleteProcessFile();
 	}

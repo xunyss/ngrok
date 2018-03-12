@@ -8,6 +8,7 @@ import io.xunyss.ngrok.debug.Debug;
  */
 public class NgrokBadOptionTest {
 	
+	// temp 삭제 안되는 상황 발생
 	public static void main(String[] args) {
 		
 		Debug.setDebugEnable(true);

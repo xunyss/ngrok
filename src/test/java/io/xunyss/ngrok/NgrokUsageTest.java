@@ -15,9 +15,11 @@ public class NgrokUsageTest {
 		Ngrok ngrok = new Ngrok(ConfigBuilder.create().build());
 		
 		// print usage output
+		// temp 삭제 안되는 상황 가끔씩 발생
 		ngrok.printUsage(System.out);
 		
 		// occur error
+		// temp 삭제 안되는 상황 발생
 //		try {
 //			ngrok.start(null);
 //		}
