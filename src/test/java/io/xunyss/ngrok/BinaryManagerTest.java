@@ -26,7 +26,7 @@ public class BinaryManagerTest {
 				boolean success = new File("C:\\Users\\xunyss\\AppData\\Local\\Temp\\ngrok.exe").delete();
 				System.out.println("delete success: " + success);
 				/*
-				 * success 는 주로 true 이지만, 가끔씩 false 가 됨 ㅜㅠ
+				 * success 는 주로 true 이지만, 가끔씩 false 가 됨
 				 * proc.destroy() 직후에는 executable file 이 지워지지 않을 수 있음
 				 */
 			}

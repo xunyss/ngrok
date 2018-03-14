@@ -2,13 +2,19 @@ package io.xunyss.ngrok;
 
 import java.util.Date;
 
+import io.xunyss.commons.lang.ThreadUtils;
+import io.xunyss.ngrok.debug.Debug;
+
 /**
  *
  * @author XUNYSS
  */
 public class NgrokTunnelTest {
 	
-	public static void main(String[] args) throws Exception {
+	// temp 삭제 안되는 상황 한번도 없네..... ==> TODO 후진 PC 에서 테스트 필요
+	public static void main(String[] args) {
+		
+		Debug.setDebugEnable(false);
 		
 		Ngrok ngrok = new Ngrok(ConfigBuilder.create()
 				.setAuthtoken(null)
@@ -36,9 +42,10 @@ public class NgrokTunnelTest {
 		System.out.print(new Date() + " : ");
 		System.out.println("established tunnel hostname:" + setupDetails.getHostname());
 		
-		Thread.sleep(10_000);
+		// 특정 시점에 stop 메소드로 종료
+		ThreadUtils.sleep(1_000);
 		ngrok.stop();
-		System.err.print(new Date() + " : ");
-		System.err.println("test program is stopped normally");
+		System.out.print(new Date() + " : ");
+		System.out.println("test program is stopped normally");
 	}
 }

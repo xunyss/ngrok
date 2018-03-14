@@ -1,17 +1,18 @@
 package io.xunyss.ngrok;
 
+import java.util.Date;
+
 import io.xunyss.ngrok.debug.Debug;
 
 /**
  *
  * @author XUNYSS
  */
-public class NgrokErrorTest {
+public class NgrokShutdownTest {
 	
-	// temp 삭제 안되는 상황 계속 발생
 	public static void main(String[] args) {
 		
-		Debug.setDebugEnable(true);
+		Debug.setDebugEnable(false);
 		
 		Ngrok ngrok = new Ngrok(ConfigBuilder.create()
 				.setAuthtoken(null)
@@ -29,10 +30,14 @@ public class NgrokErrorTest {
 			@Override
 			protected void handle(String line) {
 				System.out.println("[LOG] " + line);
-				// occur exception
-				System.out.println(1 / 0);
 			}
 		});
 		ngrok.start("xtn");
+		
+		SetupDetails setupDetails = ngrok.getSetupDetails();
+		System.out.print(new Date() + " : ");
+		System.out.println("local admin address: " + setupDetails.getAddr());
+		System.out.print(new Date() + " : ");
+		System.out.println("established tunnel hostname:" + setupDetails.getHostname());
 	}
 }

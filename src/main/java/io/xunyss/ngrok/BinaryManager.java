@@ -168,6 +168,11 @@ public class BinaryManager {
 //				try { Thread.sleep(100); } catch (Exception e) {}
 				// 2. 임시 디렉토리 삭제
 				// Process.destroy() 이후에 즉시 수행될 경우 삭제 되지 않는 현상 발생
+//				System.out.println(" >>>>> desssssssssssssssss");
+//				System.err.println(" >>>>> desssssssssssssssss");
+//				for (int i = 0; i < 99999; i++) {
+//					System.out.println("1");
+//				}
 				FileUtils.deleteDirectoryQuietly(tempDirectory);
 			}
 		});
