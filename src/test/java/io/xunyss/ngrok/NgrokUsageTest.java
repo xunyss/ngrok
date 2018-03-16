@@ -33,7 +33,7 @@ public class NgrokUsageTest {
 	public static void main(String[] args) {
 		
 		Debug.setDebugEnable(true);
-		
+
 		printUsage();
 		startNull();
 	}

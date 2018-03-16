@@ -11,7 +11,7 @@ import io.xunyss.ngrok.debug.Debug;
  */
 public class NgrokTunnelTest {
 	
-	// temp 삭제 안되는 상황 한번도 없네..... ==> TODO 후진 PC 에서 테스트 필요
+	// temp 삭제 안되는 상황 한번도 없네, 후진 컴퓨터에서 테스트해봐도 잘 지워짐
 	public static void main(String[] args) {
 		
 		Debug.setDebugEnable(false);

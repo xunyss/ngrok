@@ -224,9 +224,11 @@ public class Ngrok {
 			// parse setup details
 			try {
 				setupDetails = logParser.parse(reader);
+				Debug.log("StreamHandler.start() > finished paring setup details");
 			}
 			// case 3
 			catch (Exception ex) {
+				Debug.log("StreamHandler.start() > Exception occurred at 'logParser.parse(reader)'");
 				// close process input stream
 				IOUtils.closeQuietly(reader);
 				// fire ResultHandler.onProcessFailed()
@@ -235,6 +237,7 @@ public class Ngrok {
 			// case 1 / case 2
 			finally {
 				synchronized (setupLock) {
+					Debug.log("StreamHandler.start() > notify to waiting thread");
 					setupFinished = true;
 					setupLock.notify();
 				}
@@ -242,6 +245,7 @@ public class Ngrok {
 			
 			// invoke log handler
 			// setup details 가 parsing 성공 이후에 수행 함
+			Debug.log("StreamHandler.start() > start invoking log handler");
 			String line;
 			try {
 				while ((line = reader.readLine()) != null) {
@@ -249,9 +253,11 @@ public class Ngrok {
 						logHandler.handle(line);
 					}
 				}
+				Debug.log("StreamHandler.start() > finish invoking log handler");
 			}
 			// case 3
 			catch (Exception ex) {
+				Debug.log("StreamHandler.start() > Exception occurred at 'logHandler.handle(line)'");
 				// fire ResultHandler.onProcessFailed()
 				throw new NgrokException(ex);
 			}

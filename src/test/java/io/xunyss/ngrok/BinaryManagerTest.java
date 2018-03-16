@@ -11,7 +11,7 @@ import io.xunyss.commons.io.FileUtils;
 public class BinaryManagerTest {
 	
 	public void deleteProcessFile() throws Exception {
-		final String source = "C:/downloads/ngrok.exe";
+		final String source = "D:/downloads/ngrok.exe";
 		final String exe = "ngrok.exe";
 		
 		FileUtils.copy(new File(source), new File(FileUtils.getTempDirectory(), exe));
