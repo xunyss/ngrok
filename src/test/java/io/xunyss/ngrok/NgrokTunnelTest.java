@@ -46,6 +46,15 @@ public class NgrokTunnelTest {
 		ThreadUtils.sleep(1_000);
 		ngrok.stop();
 		System.out.print(new Date() + " : ");
-		System.out.println("test program is stopped normally");
+		System.out.println("test ngrok is stopped normally");
+		
+		// 특정 시점에 start 메소드로 재시작
+//		ThreadUtils.sleep(1_000);
+//		ngrok.start("xtn");
+//		setupDetails = ngrok.getSetupDetails();
+//		System.out.print(new Date() + " : ");
+//		System.out.println("local admin address: " + setupDetails.getAddr());
+//		System.out.print(new Date() + " : ");
+//		System.out.println("established tunnel hostname:" + setupDetails.getHostname());
 	}
 }
