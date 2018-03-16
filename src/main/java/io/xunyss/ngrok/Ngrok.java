@@ -76,7 +76,9 @@ public class Ngrok {
 			throw new NgrokException("Ngrok is already running");
 		}
 		else {
-			reset();
+			Debug.log("reset");
+			setupDetails = null;
+			setupFinished = false;
 			running = true;
 		}
 		
@@ -215,15 +217,6 @@ public class Ngrok {
 		catch (ExecuteException ex) {
 			throw new NgrokException(ex);
 		}
-	}
-	
-	/**
-	 *
-	 */
-	private void reset() {
-		Debug.log("called");
-		setupDetails = null;
-		setupFinished = false;
 	}
 	
 	
