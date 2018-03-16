@@ -8,6 +8,7 @@ import com.google.gson.Gson;
 
 import io.xunyss.commons.lang.StringUtils;
 import io.xunyss.ngrok.SetupDetails;
+import io.xunyss.ngrok.debug.Debug;
 
 /**
  *
@@ -34,6 +35,10 @@ public class JsonLogParser implements LogParser {
 		
 		String line;
 		while ((line = reader.readLine()) != null) {
+			if (Debug.isDebugEnable()) {
+				Debug.out("[SETUP] " + line);
+			}
+			
 			// 파싱중 한번이라도 에러나면 stream 끝날때 까지 다 에러로 가정
 			if (setupDetails.isError()) {
 				setupDetails.appendErrorLine(line);

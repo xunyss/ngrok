@@ -144,6 +144,7 @@ public class BinaryManager {
 	 */
 	private void registerShutdownHook() {
 		Runtime.getRuntime().addShutdownHook(new Thread("Ngrok ShutdownHook") {
+			
 			// 정상 Tunneling 수행 중 "Ctrl + C" 입력으로 shutdown-hook 실행되는 case
 			// {"Ngrok ShutdownHook"}
 			//   > 1. 종료 처리되지 않은 (현재 실행중인) process 종료
@@ -158,17 +159,21 @@ public class BinaryManager {
 			//   > 만약 StreamHandler.start() 메소드에서 setupLock.notify() 실행 전이라면
 			//     StreamHandler.start() 메소드에서 setupLock.notify() 실행 되면서 Ngrol.start() 메소드 종료
 			//   * "Ngrok ShutdownHook" thread 가 끝나면 다른 스레드들은 중지되므로 실행 여부는 보장할 수 없음
+			
+			static final int MAX_RETRY = 10;
+			static final int DELAY_MILLIS = 100;
+			
 			@Override
 			public void run() {
-				Debug.log("Ngrok BinaryManager 'shutdown-hook' start");
+				Debug.log("shutdown-hook: started");
 				
 				// 1. 종료 처리되지 않은 (현재 실행중인) process 종료
 				synchronized (BinaryManager.this) {
 					for (Ngrok.NgrokWatchdog processMonitor : processMonitors) {
-						Debug.log("registered process monitor: " +
-								processMonitor.toString() + " " + processMonitor.getProcessCommands());
+						Debug.log("shutdown-hook: registered process monitor: " +
+								processMonitor.toString() /* + " " + processMonitor.getProcessCommands() */ );
 						if (processMonitor.isProcessRunning()) {
-							Debug.log("destroy running process: " + processMonitor.toString());
+							Debug.log("shutdown-hook: destroy running process: " + processMonitor.toString());
 							processMonitor.destroyProcess();
 						}
 					}
@@ -182,15 +187,15 @@ public class BinaryManager {
 				// 임시 디렉토리 삭제시 re-try 로직을 추가 하여 (retry count: 10, delay time: 100ms)
 				// "Ngrok ShutdownHook" thread 의 종료시간을 지연 시켜 정상적으로 삭제 될 수 있도록 유도
 				// "Process Launcher" thread 도 종료 지연으로 인해 자연스럽게 onProcessComplete() 에 도달 할 수 있음
-				for (int retryCount = 0; retryCount < 10; retryCount++) {
+				for (int retryCount = 0; retryCount < MAX_RETRY; retryCount++) {
 					FileUtils.deleteDirectoryQuietly(tempDirectory);
 					if (!tempDirectory.exists()) {
-						Debug.log("temporary directory is deleted");
+						Debug.log("shutdown-hook: temporary directory is deleted");
 						return;
 					}
-					ThreadUtils.sleep(100);
+					ThreadUtils.sleep(DELAY_MILLIS);
 				}
-				Debug.log("temporary directory is not deleted");
+				Debug.log("shutdown-hook: temporary directory is not deleted");
 			}
 		});
 	}

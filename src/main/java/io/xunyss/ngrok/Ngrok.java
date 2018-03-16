@@ -40,9 +40,12 @@ public class Ngrok {
 	private LogHandler logHandler;
 	private NgrokWatchdog processMonitor;
 	
-	private SetupDetails setupDetails;
+	private SetupDetails setupDetails = null;
 	private boolean setupFinished = false;
 	private Object setupLock = new Object();
+	
+	private boolean running = false;
+	
 	
 	/**
 	 *
@@ -66,6 +69,16 @@ public class Ngrok {
 	 * @throws NgrokException
 	 */
 	public void start(String... tunnelNames) throws NgrokException {
+		Debug.log("called");
+		
+		if (running) {
+			throw new NgrokException("Ngrok is already running");
+		}
+		else {
+			running = true;
+			reset();
+		}
+		
 		// BinaryManager singleton instance
 		final BinaryManager binaryManager = BinaryManager.getInstance();
 		
@@ -113,10 +126,13 @@ public class Ngrok {
 							//          > Ngrok.start() 메소드에서 NgrokException 던짐 (catch 문 수행)
 							//          > StreamHandler.stop() > Watchdog.stop()
 							//          > ResultHandler.onProcessComplete()
-							synchronized (binaryManager) {
-								Debug.log("onProcessComplete: " + exitValue);
+//							synchronized (binaryManager) {
+								// 2018.03.17 XUNYSS synchronized 제거
+								// unregisterProcessMonitor 이미 동기화 처리 되어 있음
+								Debug.log("exitValue: " + exitValue);
 								binaryManager.unregisterProcessMonitor(processMonitor);
-							}
+								running = false;
+//							}
 						}
 						
 						@Override
@@ -125,11 +141,17 @@ public class Ngrok {
 							//          > Watchdog.start() > StreamHandler.start()
 							//          > StreamHandler.start() 메소드에서 RuntimeException 발생
 							//          > ResultHandler.onProcessFailed()
-							synchronized (binaryManager) {
-								Debug.log("onProcessFailed: " + ex.toString());
+//							synchronized (binaryManager) {
+								// 2018.03.17 XUNYSS synchronized 제거
+								// unregisterProcessMonitor 이미 동기화 처리 되어 있고
+								// 뭐 굳이 다른 스레드와 경합할 일이 없어 보임
+								//   가능성 거의 없지만 binaryManager 의 shutdown-hook 스레드와 경합한다 해도
+								//   processMonitor.destroyProcess() 도 뭐 두번 이상 실행되도 상관 없기도 하고
+								Debug.log(ex.toString());
 								binaryManager.unregisterProcessMonitor(processMonitor);
 								processMonitor.destroyProcess();
-							}
+								running = false;
+//							}
 						}
 					}
 			);
@@ -159,7 +181,7 @@ public class Ngrok {
 			throw new NgrokException(setupDetails.getErrorMessage());
 		}
 		
-		Debug.log("Ngrok.start() finished");
+		Debug.log("ended");
 	}
 	
 	/**
@@ -174,20 +196,16 @@ public class Ngrok {
 	 *
 	 */
 	public void stop() {
+		Debug.log("called");
 		processMonitor.destroyProcess();
 	}
 	
 	/**
 	 *
 	 */
-	public void reset() {
-		// TODO implements
-	}
-	
-	/**
-	 *
-	 */
 	public void printUsage(OutputStream outputStream) {
+		Debug.log("called");
+		
 		ProcessExecutor processExecutor = new ProcessExecutor();
 		processExecutor.setStreamHandler(new PumpStreamHandler(outputStream));
 		try {
@@ -196,6 +214,15 @@ public class Ngrok {
 		catch (ExecuteException ex) {
 			throw new NgrokException(ex);
 		}
+	}
+	
+	/**
+	 *
+	 */
+	private void reset() {
+		Debug.log("called");
+		setupDetails = null;
+		setupFinished = false;
 	}
 	
 	
@@ -216,7 +243,7 @@ public class Ngrok {
 		
 		@Override
 		public void start() {
-			Debug.log("StreamHandler.start() called");
+			Debug.log("called");
 			
 			InputStream inputStream = getLogInputStream();
 			BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
@@ -224,11 +251,11 @@ public class Ngrok {
 			// parse setup details
 			try {
 				setupDetails = logParser.parse(reader);
-				Debug.log("StreamHandler.start() > finished paring setup details");
+				Debug.log("succeeded to paring setup details");
 			}
 			// case 3
 			catch (Exception ex) {
-				Debug.log("StreamHandler.start() > Exception occurred at 'logParser.parse(reader)'");
+				Debug.log("failed to paring setup details");
 				// close process input stream
 				IOUtils.closeQuietly(reader);
 				// fire ResultHandler.onProcessFailed()
@@ -237,7 +264,7 @@ public class Ngrok {
 			// case 1 / case 2
 			finally {
 				synchronized (setupLock) {
-					Debug.log("StreamHandler.start() > notify to waiting thread");
+					Debug.log("notify to waiting thread");
 					setupFinished = true;
 					setupLock.notify();
 				}
@@ -245,7 +272,7 @@ public class Ngrok {
 			
 			// invoke log handler
 			// setup details 가 parsing 성공 이후에 수행 함
-			Debug.log("StreamHandler.start() > start invoking log handler");
+			Debug.log("start log handler");
 			String line;
 			try {
 				while ((line = reader.readLine()) != null) {
@@ -253,11 +280,11 @@ public class Ngrok {
 						logHandler.handle(line);
 					}
 				}
-				Debug.log("StreamHandler.start() > finish invoking log handler");
+				Debug.log("end log handler");
 			}
 			// case 3
 			catch (Exception ex) {
-				Debug.log("StreamHandler.start() > Exception occurred at 'logHandler.handle(line)'");
+				Debug.log("failed to handle log");
 				// fire ResultHandler.onProcessFailed()
 				throw new NgrokException(ex);
 			}
@@ -269,7 +296,7 @@ public class Ngrok {
 		
 		@Override
 		public void stop() {
-			Debug.log("StreamHandler.stop() called");
+			Debug.log("called");
 		}
 		
 		private InputStream getLogInputStream() {
@@ -292,27 +319,33 @@ public class Ngrok {
 		
 		@Override
 		protected void start() {
-			Debug.log("Watchdog.start() called");
+			Debug.log("called");
 		}
 		
 		@Override
 		protected void stop() {
-			Debug.log("Watchdog.stop() called");
+			Debug.log("called");
 		}
 		
 		@Override
 		public boolean isProcessRunning() {
-			// 아직 internalStart, start 함수가 한번도 실행 안된상태에서 함수 호출시 (셧다운훅에서(가능성은낮지만))
-			// 즉 execute 수행 시점, start() 수행 시점 사이에 isProcessRunning 호출됐을때
-			// 대비하기 위해 그럴땐 start 먹을때 까지 isProcessRunning 호출한 스레드를 waiting
-			// ## commons.exec 의 Watchdog 도 같이 수정해야 함
+			// 2018.03.11 XUNYSS Watchdog.isProcessRunning() 수정
+			// 가능성은 낮지만 BinaryManager 의 shutdown-hook 에서 호출시
+			// ProcessExecutor.execute() 수행 후, Watchdog.startMonitoring() 수행 전 의 시점이라면
+			// Watchdog.startMonitoring() 수행 될때까지 isProcessRunning 호출한 스레드를 waiting 하도록
+			// 그렇지 않으면 process 가 수행중이 아니라고 판단해 ngrok executable 은 좀비 프로세스가 됨
+			Debug.log("called");
 			return super.isProcessRunning();
 		}
 		
 		@Override
 		public void destroyProcess() {
-			// 이 함수도 마찬가지임
-			// execute 수행 시점, start() 수행 시점 사이에 isProcessRunning 호출됐을때
+			// 2018.03.11 XUNYSS Watchdog.isProcessRunning() 수정
+			// 가능성은 낮지만 BinaryManager 의 shutdown-hook 에서 호출시
+			// ProcessExecutor.execute() 수행 후, Watchdog.startMonitoring() 수행 전 의 시점이라면
+			// Watchdog.startMonitoring() 수행 될때까지 isProcessRunning 호출한 스레드를 waiting 하도록
+			// 그렇지 않으면 process 가 수행중이 아니라고 판단해 ngrok executable 은 좀비 프로세스가 됨
+			Debug.log("called");
 			super.destroyProcess();
 		}
 	}

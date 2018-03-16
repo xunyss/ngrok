@@ -23,13 +23,19 @@ public final class Debug {
 		Debug.debugEnable = debugEnable;
 	}
 	
-	public static boolean getDebugEnable() {
+	public static boolean isDebugEnable() {
 		return debugEnable;
 	}
 	
 	
 	private static final PrintStream stream = System.out;
 	private static final Date datetime = new Date();
+	
+	public static void out(String msg) {
+		if (debugEnable) {
+			stream.println(msg);
+		}
+	}
 	
 	public static void log(String msg) {
 		if (debugEnable) {
