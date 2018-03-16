@@ -72,11 +72,12 @@ public class Ngrok {
 		Debug.log("called");
 		
 		if (running) {
+			stop();
 			throw new NgrokException("Ngrok is already running");
 		}
 		else {
-			running = true;
 			reset();
+			running = true;
 		}
 		
 		// BinaryManager singleton instance
