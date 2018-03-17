@@ -6,6 +6,12 @@ package io.xunyss.ngrok;
  */
 public class NgrokException extends RuntimeException {
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -3888505567589332371L;
+	
+	
 	public NgrokException(String message, Throwable cause) {
 		super(message, cause);
 	}

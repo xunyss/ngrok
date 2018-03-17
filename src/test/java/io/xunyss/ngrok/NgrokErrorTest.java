@@ -9,6 +9,7 @@ import io.xunyss.ngrok.debug.Debug;
 public class NgrokErrorTest {
 	
 	// temp 삭제 안되는 상황 계속 발생
+	// => shutdown-hook 에 retry/delay 반영하여 해결
 	public static void main(String[] args) {
 		
 		Debug.setDebugEnable(true);

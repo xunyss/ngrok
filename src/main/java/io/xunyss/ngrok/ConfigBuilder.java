@@ -95,6 +95,9 @@ public class ConfigBuilder {
 		if (authtoken != null) {
 			conf.append("authtoken: ").append(authtoken).append(EOL);
 		}
+		if (webAddr != null) {
+			conf.append("web_addr: ").append(webAddr).append(EOL);
+		}
 		if (tunnels != null && tunnels.size() > 0) {
 			conf.append("tunnels:").append(EOL);
 			for (Tunnel tunnel : tunnels) {

@@ -12,6 +12,7 @@ public class NgrokShutdownTest {
 	
 	// java -cp classes;test-classes;commons-base-1.0.0-RELEASE.jar;gson-2.8.2.jar io.xunyss.ngrok.NgrokShutdownTest
 	// temp 삭제 안되는 상황 계속 발생
+	// => shutdown-hook 에 retry/delay 반영하여 해결
 	public static void main(String[] args) {
 		
 		Debug.setDebugEnable(true);
