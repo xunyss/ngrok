@@ -223,7 +223,8 @@ public class Ngrok {
 	//==============================================================================================
 	
 	/**
-	 *
+	 * TODO: LineReadHandler 를 상속받는 형태로 변환 가능한지 검토
+	 * 
 	 * @author XUNYSS
 	 */
 	class NgrokProcessStreamHandler extends StreamHandler {
