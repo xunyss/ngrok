@@ -227,7 +227,7 @@ public class Ngrok {
 	 * 
 	 * @author XUNYSS
 	 */
-	class NgrokProcessStreamHandler extends StreamHandler {
+	private final class NgrokProcessStreamHandler extends StreamHandler {
 		
 		private final LogParser logParser;
 		
@@ -310,7 +310,7 @@ public class Ngrok {
 	 *
 	 * @author XUNYSS
 	 */
-	class NgrokWatchdog extends Watchdog {
+	private final class NgrokWatchdog extends Watchdog {
 		
 		@Override
 		protected void start() {

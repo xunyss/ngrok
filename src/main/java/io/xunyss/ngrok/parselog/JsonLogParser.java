@@ -54,7 +54,7 @@ public class JsonLogParser implements LogParser {
 				}
 			}
 			catch (Exception ex) {
-				// fail ed to parse
+				// failed to parse
 				setupDetails.setError(true);
 				if (StringUtils.isNotEmpty(line)) {
 					setupDetails.appendErrorLine(line);
