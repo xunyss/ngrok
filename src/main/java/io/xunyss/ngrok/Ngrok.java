@@ -310,7 +310,7 @@ public class Ngrok {
 	 *
 	 * @author XUNYSS
 	 */
-	private final class NgrokWatchdog extends Watchdog {
+	final class NgrokWatchdog extends Watchdog {
 		
 		@Override
 		protected void start() {
