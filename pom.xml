@@ -7,9 +7,9 @@
 	<modelVersion>4.0.0</modelVersion>
 	
 	<parent>
-		<groupId>io.xunyss.pom</groupId>
-		<artifactId>pom</artifactId>
-		<version>1.0.0</version>
+		<groupId>io.xunyss.poms</groupId>
+		<artifactId>poms</artifactId>
+		<version>1</version>
 	</parent>
 	<groupId>io.xunyss.ngrok</groupId>
 	<artifactId>ngrok</artifactId>
@@ -21,17 +21,6 @@
 	
 	<properties>
 	</properties>
-	
-	<repositories>
-		<repository>
-			<id>github-mvn-repo</id>
-			<url>https://raw.github.com/xunyss/pom/mvn-repo/</url>
-			<snapshots>
-				<enabled>true</enabled>
-				<updatePolicy>always</updatePolicy>
-			</snapshots>
-		</repository>
-	</repositories>
 	
 	<dependencies>
 		<dependency>
