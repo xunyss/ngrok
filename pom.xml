@@ -6,11 +6,6 @@
 
 	<modelVersion>4.0.0</modelVersion>
 	
-	<parent>
-		<groupId>io.xunyss.poms</groupId>
-		<artifactId>poms</artifactId>
-		<version>1</version>
-	</parent>
 	<groupId>io.xunyss.ngrok</groupId>
 	<artifactId>ngrok</artifactId>
 	<version>1.0.0-RELEASE</version>
@@ -18,8 +13,11 @@
 	
 	<name>ngrok</name>
 	<description>ngrok</description>
-	
+
 	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
 	</properties>
 	
 	<dependencies>
@@ -31,7 +29,7 @@
 		<dependency>
 			<groupId>com.google.code.gson</groupId>
 			<artifactId>gson</artifactId>
-			<version>2.10</version>
+			<version>2.13.2</version>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
@@ -40,5 +38,36 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-	
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>3.4.0</version>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>3.12.0</version>
+				<executions>
+					<execution>
+						<id>attach-javadoc</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+
 </project>
